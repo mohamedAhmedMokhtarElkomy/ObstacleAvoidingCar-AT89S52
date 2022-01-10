@@ -31,36 +31,36 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
    11:		B      00A1	ECHO EQU P2.1
    12:	  0008	D2 A1		SETB ECHO              ; sets ECHO as input for receiving echo
    13:
-   14:	  000A			MAIN:
-   15:	  000A	D2 A0			SETB TRIG		; starts the trigger pulse
-   16:	  000C	11 60			ACALL Delay10M     	; Delay 10uS width for the trigger pulse
-   17:	  000E	C2 A0			CLR TRIG         	; ends the trigger pulse
-   18:	  0010	30 A1 FD		JNB ECHO,$    		; loops here until echo is received
-   19:	  0013	74 00			MOV A, #0H
-   20:
-   21:					;Loop until ECHO pin is low
-   22:	  0015	11 73			echoIS1:ACALL Delay1000M	;Delay 10 microsecond
-   23:	  0017	04				INC A		;Increment number of 10 microseconds occured
-   24:	  0018	20 A1 FA			JB ECHO, echoIS1;If ECHO is high loop to echo is 1
-   25:	  001B	FE				MOV R6, A	;Store A value in R6
-   26:	  001C	11 22				ACALL DLOOP      ;calls the display loop to print A which is stored in
-   27:
-   28:	  001E	11 49				ACALL DelaySec	 ;Delay 1 sec
+   14:	  000A	74 00		MOV A, #0H
+   15:
+   16:	  000C			MAIN:   ;TRIG CODE
+   17:	  000C	D2 A0			SETB TRIG		; starts the trigger pulse
+   18:	  000E	11 7B			ACALL Delay10M     	; Delay 10uS width for the trigger pulse
+   19:	  0010	C2 A0			CLR TRIG         	; ends the trigger pulse
+   20:	  0012	30 A1 FD		JNB ECHO,$    		; loops here until echo is received
+   21:
+   22:	  0015	11 4B			ACALL CalcDistance
+   23:
+   24:	  0017	11 64			ACALL DelaySec	 ;Delay 1 sec
 
-   29:	  0020	80 E8				SJMP MAIN        ;short jumps to MAIN loop
-   30:
-   31:				;TODO remove
-   32:				;DELAY1: MOV R6,#2D     ; 10uS delay
-   33:				;LABEL1: DJNZ R6,LABEL1
-   34:				;        RET
-   35:
-   36:				;Display LOOP for send char to serial port for printing it on virtual terminal
-   37:	  0022	75 89 20	DLOOP:	MOV TMOD, #20H	; or 00100000B => Mode 2 for Timer 1 (8bit Auto Reload)
-   38:	  0025	75 8D FD		MOV TH1, #0FDH	;Setting BaudRate of 9600 (-3). SMOD is 0 by default
-   39:	  0028	75 98 50		MOV SCON, #50H	;Serial Mode 1, REN Enabled or #01010000B
-   40:	  002B	D2 8E			SETB TR1
-   41:
-   42:	  002D	EE			MOV A, R6
+   25:	  0019	80 F1			SJMP MAIN        ;short jumps to MAIN loop
+   26:
+   27:				;Display LOOP for send char to serial port for printing it on virtual terminal
+   28:	  001B	75 89 20	DLOOP:	MOV TMOD, #20H	; or 00100000B => Mode 2 for Timer 1 (8bit Auto Reload)
+   29:	  001E	75 8D FD		MOV TH1, #0FDH	;Setting BaudRate of 9600 (-3). SMOD is 0 by default
+   30:	  0021	75 98 50		MOV SCON, #50H	;Serial Mode 1, REN Enabled or #01010000B
+   31:	  0024	D2 8E			SETB TR1
+   32:
+   33:	  0026	EE			MOV A, R6
+   34:	  0027	7F 00			MOV R7, #0D	;Counter to store count of numbers
+   35:				;PrintDEC, print => for converting hex value to decimal then print each number
+   36:	  0029				PrintDEC:
+   37:	  0029	0F				INC R7
+   38:	  002A	75 F0 0A			MOV B, #10D
+   39:	  002D	84				DIV AB			;the quotient is stored in the accumulator and the remainder
+				 is stored in the B register
+   40:	  002E	C0 F0				PUSH B
+   41:	  0030	B4 00 F6			CJNE A, #0D, PrintDEC	;Compare the first two operands and branches to the specifie
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
 
@@ -68,62 +68,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-   43:	  002E	7F 00			MOV R7, #0D	;Counter to store count of numbers
-   44:				;PrintDEC, print => for converting hex value to decimal then print each number
-   45:	  0030				PrintDEC:
-   46:	  0030	0F				INC R7
-   47:	  0031	75 F0 0A			MOV B, #10D
-   48:	  0034	84				DIV AB			;the quotient is stored in the accumulator and the remainder
-				 is stored in the B register
-   49:	  0035	C0 F0				PUSH B
-   50:	  0037	B4 00 F6			CJNE A, #0D, PrintDEC	;Compare the first two operands and branches to the specifie
 				d destination if their values are not equal
-   51:
-   52:	  003A	D0 05			print:	POP 05H			;POP to 05H which is R5
-   53:	  003C	ED				MOV A, R5
-   54:	  003D	24 30				ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
-   55:	  003F	F5 99				MOV SBUF, A
-   56:	  0041	30 99 FD			JNB TI, $
-   57:	  0044	C2 99				CLR TI
-   58:						;ACALL DelaySec		;TODO i think it is not useful
-   59:	  0046	DF F2				DJNZ R7, print		;decrements the byte indicated by the first operand and, if
+   42:
+   43:	  0033	D0 05			print:	POP 05H			;POP to 05H which is R5
+   44:	  0035	ED				MOV A, R5
+   45:	  0036	24 30				ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
+   46:	  0038	F5 99				MOV SBUF, A
+   47:	  003A	30 99 FD			JNB TI, $
+   48:	  003D	C2 99				CLR TI
+   49:						;ACALL DelaySec		;TODO i think it is not useful
+   50:	  003F	DF F2				DJNZ R7, print		;decrements the byte indicated by the first operand and, if
 				the resulting value is not zero, branches to the address specified in the second operand.
-   60:
-   61:	  0048	22		RET
-   62:
-   63:				;TODO store old value of R7
-   64:	  0049			DelaySec:
-   65:	  0049	75 89 01	    	MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
-   66:	  004C	7F 14		    	MOV R7, #20D
-   67:				    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
-   68:					;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
-   69:	  004E			DelaySecLoop:
-   70:	  004E	75 8A 00	    	MOV TL0, #00H
-   71:	  0051	75 8C 4C	    	MOV TH0, #4CH
-   72:	  0054	D2 8C		    	SETB TR0 ;Start timer 0
-   73:
-   74:	  0056	30 8D FD	    	JNB TF0, $ ;Loop until Timer 0 overflow = 1
-   75:	  0059	C2 8C		    	CLR TR0 ;Stop timer 0
-   76:	  005B	C2 8D		    	CLR TF0 ;Clear overFlow
-   77:
-   78:	  005D	DF EF		    	DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
+   51:	  0041	74 20				MOV A, #' '
+   52:	  0043	F5 99				MOV SBUF, A
+   53:	  0045	30 99 FD			JNB TI, $
+   54:	  0048	C2 99				CLR TI
+   55:
+   56:	  004A	22		RET
+   57:
+   58:	  004B			CalcDistance:
+   59:					;Loop until ECHO pin is low
+   60:	  004B	75 89 01		MOV TMOD, #00000001B	;set timer0 as mode 1 16-bit
+   61:					;Start counting ticks from 44103D => AC47
+   62:	  004E	75 8A 47		MOV TL0, #47H
+   63:	  0051	75 8C AC		MOV TH0, #0ACH
+   64:
+   65:	  0054	D2 8C			SETB TR0	;start timer 0
+   66:
+   67:					;TODO LOOP while ECHO 1 and TF0 is 0
+   68:	  0056	20 A1 FD		JB ECHO, $	;If ECHO is high loop to echo is 1
+   69:	  0059	C2 8C			CLR TR0
+   70:
+   71:					;Move TH0 to R6 to be printed
+   72:	  005B	AE 8C			MOV R6, TH0
+   73:	  005D	11 1B			ACALL DLOOP
+   74:
+   75:					;Move TL0 to R6 to be printed
+   76:	  005F	AE 8A			MOV R6, TL0
+   77:	  0061	11 1B			ACALL DLOOP
+   78:	  0063	22		RET
    79:
-   80:				;    	POP 07H
-   81:	  005F	22		RET
-   82:
-   83:				;Delay 10 micro sec
-   84:	  0060			Delay10M:
-   85:	  0060	75 89 01		MOV TMOD, #00000001B ;set timer0 as mode 2 8-bit auto relode
-   86:	  0063	75 8A F7		MOV TL0, #0F7H
-   87:	  0066	75 8C FF		MOV TH0, #0FFH
-   88:
-   89:	  0069	D2 8C			SETB TR0
+   80:				;TODO store old value of R7
+   81:	  0064			DelaySec:
+   82:	  0064	75 89 01	    	MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
+   83:	  0067	7F 14		    	MOV R7, #20D
+   84:				    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
+   85:					;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
+   86:	  0069				DelaySecLoop:
+   87:	  0069	75 8A 00	    		MOV TL0, #00H
+   88:	  006C	75 8C 4C	    		MOV TH0, #4CH
+   89:	  006F	D2 8C		    		SETB TR0	;Start timer 0
    90:
-   91:	  006B	30 8D FD		JNB TF0, $
-   92:	  006E	C2 8C			CLR TR0
-   93:	  0070	C2 8D			CLR TF0
-   94:	  0072	22		RET
-   95:				;Delay 10 micro sec
+   91:	  0071	30 8D FD	    		JNB TF0, $	;Loop until Timer 0 overflow = 1
+   92:	  0074	C2 8C		    		CLR TR0		;Stop timer 0
+   93:	  0076	C2 8D		    		CLR TF0		;Clear overFlow
+   94:
+   95:	  0078	DF EF		    		DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
 
@@ -131,20 +131,38 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-   96:	  0073			Delay1000M:
-   97:	  0073	75 89 01		MOV TMOD, #00000001B ;set timer0 as mode 2 8-bit auto relode
-   98:	  0076	75 8A 66		MOV TL0, #66H
-   99:	  0079	75 8C FC		MOV TH0, #0FCH
-  100:
-  101:	  007C	D2 8C			SETB TR0
-  102:
-  103:	  007E	30 8D FD		JNB TF0, $
-  104:	  0081	C2 8C			CLR TR0
-  105:	  0083	C2 8D			CLR TF0
-  106:	  0085	22		RET
+   96:
+   97:				;    	POP 07H
+   98:	  007A	22		RET
+   99:
+  100:				;Delay 10 micro sec
+  101:	  007B			Delay10M:
+  102:	  007B	75 89 01		MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
+  103:	  007E	75 8A F7		MOV TL0, #0F7H
+  104:	  0081	75 8C FF		MOV TH0, #0FFH
+  105:
+  106:	  0084	D2 8C			SETB TR0
   107:
-  108:	  0086			close:
-  109:					END
+  108:	  0086	30 8D FD		JNB TF0, $
+  109:	  0089	C2 8C			CLR TR0
+  110:	  008B	C2 8D			CLR TF0
+  111:	  008D	22		RET
+  112:
+  113:				;Delay 1000 micro sec
+  114:	  008E			Delay1000M:
+  115:	  008E	75 89 01		MOV TMOD, #00000001B ;set timer0 as mode 2 16-bit
+  116:	  0091	75 8A 66		MOV TL0, #66H
+  117:	  0094	75 8C FC		MOV TH0, #0FCH
+  118:
+  119:	  0097	D2 8C			SETB TR0
+  120:
+  121:	  0099	30 8D FD		JNB TF0, $
+  122:	  009C	C2 8C			CLR TR0
+  123:	  009E	C2 8D			CLR TF0
+  124:	  00A0	22		RET
+  125:
+  126:	  00A1			close:
+  127:					END
 
 
 
@@ -174,18 +192,18 @@ SYMBOL				  TYPE     VALUE	LINE
 AC				  BIT	      D6
 ACC				  DATA	      E0
 B				  DATA	      F0
-CLOSE				  CODE	    0086	 108
+CALCDISTANCE			  CODE	    004B	  58
+CLOSE				  CODE	    00A1	 126
 CY				  BIT	      D7
-DELAY1000M			  CODE	    0073	  96
-DELAY10M			  CODE	    0060	  84
-DELAYSEC			  CODE	    0049	  64
-DELAYSECLOOP			  CODE	    004E	  69
-DLOOP				  CODE	    0022	  37
+DELAY1000M			  CODE	    008E	 114
+DELAY10M			  CODE	    007B	 101
+DELAYSEC			  CODE	    0064	  81
+DELAYSECLOOP			  CODE	    0069	  86
+DLOOP				  CODE	    001B	  28
 DPH				  DATA	      83
 DPL				  DATA	      82
 EA				  BIT	      AF
 ECHO				  NUMBER    00A1	  11
-ECHOIS1				  CODE	    0015	  22
 ES				  BIT	      AC
 ET0				  BIT	      A9
 ET1				  BIT	      AB
@@ -202,7 +220,7 @@ INT1				  BIT	      B3
 IP				  DATA	      B8
 IT0				  BIT	      88
 IT1				  BIT	      8A
-MAIN				  CODE	    000A	  14
+MAIN				  CODE	    000C	  16
 OV				  BIT	      D2
 P				  BIT	      D0
 P0				  DATA	      80
@@ -210,8 +228,8 @@ P1				  DATA	      90
 P2				  DATA	      A0
 P3				  DATA	      B0
 PCON				  DATA	      87
-PRINT				  CODE	    003A	  52
-PRINTDEC			  CODE	    0030	  45
+PRINT				  CODE	    0033	  43
+PRINTDEC			  CODE	    0029	  36
 PS				  BIT	      BC
 PSW				  DATA	      D0
 PT0				  BIT	      B9

@@ -11,27 +11,18 @@ CLR TRIG               ; sets TRIG as output for sending trigger
 ECHO EQU P2.1
 SETB ECHO              ; sets ECHO as input for receiving echo
 
-MAIN:     
+MOV A, #0H
+
+MAIN:   ;TRIG CODE
 	SETB TRIG		; starts the trigger pulse
 	ACALL Delay10M     	; Delay 10uS width for the trigger pulse
 	CLR TRIG         	; ends the trigger pulse
 	JNB ECHO,$    		; loops here until echo is received
-	MOV A, #0H
-	
-	;Loop until ECHO pin is low
-	echoIS1:ACALL Delay1000M	;Delay 10 microsecond
-		INC A		;Increment number of 10 microseconds occured
-		JB ECHO, echoIS1;If ECHO is high loop to echo is 1 
-		MOV R6, A	;Store A value in R6
-		ACALL DLOOP      ;calls the display loop to print A which is stored in 
+
+	ACALL CalcDistance
 		
-		ACALL DelaySec	 ;Delay 1 sec   		   						
-		SJMP MAIN        ;short jumps to MAIN loop
-	
-;TODO remove		
-;DELAY1: MOV R6,#2D     ; 10uS delay
-;LABEL1: DJNZ R6,LABEL1
-;        RET 
+	ACALL DelaySec	 ;Delay 1 sec   		   						
+	SJMP MAIN        ;short jumps to MAIN loop
 	
 ;Display LOOP for send char to serial port for printing it on virtual terminal
 DLOOP:	MOV TMOD, #20H	; or 00100000B => Mode 2 for Timer 1 (8bit Auto Reload)
@@ -57,32 +48,58 @@ DLOOP:	MOV TMOD, #20H	; or 00100000B => Mode 2 for Timer 1 (8bit Auto Reload)
 		CLR TI
 		;ACALL DelaySec		;TODO i think it is not useful
 		DJNZ R7, print		;decrements the byte indicated by the first operand and, if the resulting value is not zero, branches to the address specified in the second operand.
+		MOV A, #' '
+		MOV SBUF, A
+		JNB TI, $
+		CLR TI
 	
 RET
 
+CalcDistance:
+	;Loop until ECHO pin is low
+	MOV TMOD, #00000001B	;set timer0 as mode 1 16-bit 
+	;Start counting ticks from 44103D => AC47
+	MOV TL0, #47H
+	MOV TH0, #0ACH
+
+	SETB TR0	;start timer 0
+	
+	;TODO LOOP while ECHO 1 and TF0 is 0	
+	JB ECHO, $	;If ECHO is high loop to echo is 1 
+	CLR TR0
+	
+	;Move TH0 to R6 to be printed
+	MOV R6, TH0
+	ACALL DLOOP
+	
+	;Move TL0 to R6 to be printed	
+	MOV R6, TL0
+	ACALL DLOOP
+RET
+	
 ;TODO store old value of R7
 DelaySec:
     	MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit 
     	MOV R7, #20D
     	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
 	;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
-DelaySecLoop:
-    	MOV TL0, #00H
-    	MOV TH0, #4CH
-    	SETB TR0 ;Start timer 0
+	DelaySecLoop:
+    		MOV TL0, #00H
+    		MOV TH0, #4CH
+    		SETB TR0	;Start timer 0
     	
-    	JNB TF0, $ ;Loop until Timer 0 overflow = 1
-    	CLR TR0 ;Stop timer 0
-    	CLR TF0 ;Clear overFlow
+    		JNB TF0, $	;Loop until Timer 0 overflow = 1
+    		CLR TR0		;Stop timer 0
+    		CLR TF0		;Clear overFlow
     	
-    	DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
+    		DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
     	
 ;    	POP 07H
 RET
 
 ;Delay 10 micro sec
 Delay10M:
-	MOV TMOD, #00000001B ;set timer0 as mode 2 8-bit auto relode
+	MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
 	MOV TL0, #0F7H
 	MOV TH0, #0FFH
 	
@@ -92,9 +109,10 @@ Delay10M:
 	CLR TR0
 	CLR TF0
 RET 
-;Delay 10 micro sec
+
+;Delay 1000 micro sec
 Delay1000M:
-	MOV TMOD, #00000001B ;set timer0 as mode 2 8-bit auto relode
+	MOV TMOD, #00000001B ;set timer0 as mode 2 16-bit
 	MOV TL0, #66H
 	MOV TH0, #0FCH
 	
