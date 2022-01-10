@@ -1,0 +1,173 @@
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 1
+
+
+
+
+
+       MCS-51 Family Macro Assembler   A S E M - 5 1   V 1.3
+       =====================================================
+
+
+
+	Source File:	C:\Microcontroller project\microprocessor\Bluetooth module\code\bluetooth.asm
+	Object File:	C:\Microcontroller project\microprocessor\Bluetooth module\code\bluetooth.hex
+	List File:	C:\Microcontroller project\microprocessor\Bluetooth module\code\bluetooth.lst
+
+
+
+ Line  I  Addr  Code            Source
+
+    1:				;R4 store received character
+    2:		N      0000	ORG 0
+    3:		B      00A0	LED EQU P2.0
+    4:	  0000	C2 A0		CLR LED
+    5:
+    6:	  0002	75 89 20	MOV TMOD, #00100000B	;Mode 2 for timer 1 (8 bit auto reload)
+    7:	  0005	75 8D FD	MOV TH1, #0FDH		;setting baud rate 9600
+    8:	  0008	75 98 50	MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
+    9:
+   10:	  000B	D2 8E		SETB TR1	;Run timer 1
+   11:	  000D	30 98 FD	Receive:JNB RI, $	;Waiting for receive interrupt flag
+   12:	  0010	E5 99			MOV A, SBUF	;Move received character to A
+   13:	  0012	C2 98			CLR RI		;Clear receive interrupt flag
+   14:	  0014	FC			MOV R4, A
+   15:	  0015	C3			Switch:	CLR C		;Clear carry flag befor using SUBB for comparing
+   16:	  0016	94 31				SUBB A, #'1'	;Compare A to 1
+   17:	  0018	60 08				JZ LEDON	;If A = 1 turn on LED
+   18:
+   19:	  001A	EC				MOV A, R4;
+   20:	  001B	C3				CLR C		;Clear carry flag befor using SUBB for comparing
+   21:	  001C	94 30				SUBB A, #'0'	;Compare A to 0
+   22:	  001E	60 07				JZ LEDOFF	;If A = 0 turn off LED
+   23:
+   24:	  0020	80 EB				SJMP Receive	;Jump back to Receive
+   25:
+   26:	  0022	D2 A0		LEDON:	SETB LED
+   27:	  0024	02 00 2C		JMP FeedBck
+   28:
+   29:	  0027	C2 A0		LEDOFF:	CLR LED
+   30:	  0029	02 00 2C		JMP FeedBck
+   31:
+   32:	  002C	8C 99		FeedBck:MOV SBUF, R4
+   33:	  002E	30 99 FD		JNB TI, $
+   34:	  0031	C2 99			CLR TI
+   35:	  0033	80 D8			SJMP Receive	;Jump back to Receive
+   36:
+   37:
+   38:
+   39:
+   40:				END
+
+
+
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
+
+
+
+
+
+                     register banks used:  ---
+
+                     no errors
+
+
+
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
+
+
+
+
+
+	       L I S T   O F   S Y M B O L S
+	       =============================
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+??ASEM_51			  NUMBER    8051
+??VERSION			  NUMBER    0130
+AC				  BIT	      D6
+ACC				  DATA	      E0
+B				  DATA	      F0
+CY				  BIT	      D7
+DPH				  DATA	      83
+DPL				  DATA	      82
+EA				  BIT	      AF
+ES				  BIT	      AC
+ET0				  BIT	      A9
+ET1				  BIT	      AB
+EX0				  BIT	      A8
+EX1				  BIT	      AA
+EXTI0				  CODE	    0003
+EXTI1				  CODE	    0013
+F0				  BIT	      D5
+FEEDBCK				  CODE	    002C	  32
+IE				  DATA	      A8
+IE0				  BIT	      89
+IE1				  BIT	      8B
+INT0				  BIT	      B2
+INT1				  BIT	      B3
+IP				  DATA	      B8
+IT0				  BIT	      88
+IT1				  BIT	      8A
+LED				  NUMBER    00A0	   3
+LEDOFF				  CODE	    0027	  29
+LEDON				  CODE	    0022	  26
+OV				  BIT	      D2
+P				  BIT	      D0
+P0				  DATA	      80
+P1				  DATA	      90
+P2				  DATA	      A0
+P3				  DATA	      B0
+PCON				  DATA	      87
+PS				  BIT	      BC
+PSW				  DATA	      D0
+PT0				  BIT	      B9
+PT1				  BIT	      BB
+PX0				  BIT	      B8
+PX1				  BIT	      BA
+RB8				  BIT	      9A
+RD				  BIT	      B7
+RECEIVE				  CODE	    000D	  11
+REN				  BIT	      9C
+RESET				  CODE	    0000
+RI				  BIT	      98
+RS0				  BIT	      D3
+RS1				  BIT	      D4
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
+
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+RXD				  BIT	      B0
+SBUF				  DATA	      99
+SCON				  DATA	      98
+SINT				  CODE	    0023
+SM0				  BIT	      9F
+SM1				  BIT	      9E
+SM2				  BIT	      9D
+SP				  DATA	      81
+SWITCH				  CODE	    0015	  15
+T0				  BIT	      B4
+T1				  BIT	      B5
+TB8				  BIT	      9B
+TCON				  DATA	      88
+TF0				  BIT	      8D
+TF1				  BIT	      8F
+TH0				  DATA	      8C
+TH1				  DATA	      8D
+TI				  BIT	      99
+TIMER0				  CODE	    000B
+TIMER1				  CODE	    001B
+TL0				  DATA	      8A
+TL1				  DATA	      8B
+TMOD				  DATA	      89
+TR0				  BIT	      8C
+TR1				  BIT	      8E
+TXD				  BIT	      B1
+WR				  BIT	      B6
