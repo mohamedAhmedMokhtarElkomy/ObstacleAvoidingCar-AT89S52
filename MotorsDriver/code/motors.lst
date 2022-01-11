@@ -1,0 +1,205 @@
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 1
+
+
+
+
+
+       MCS-51 Family Macro Assembler   A S E M - 5 1   V 1.3
+       =====================================================
+
+
+
+	Source File:	C:\Microcontroller project\microprocessor\MotorsDriver\code\motors.asm
+	Object File:	C:\Microcontroller project\microprocessor\MotorsDriver\code\motors.hex
+	List File:	C:\Microcontroller project\microprocessor\MotorsDriver\code\motors.lst
+
+
+
+ Line  I  Addr  Code            Source
+
+    1:				;R4 store received character
+    2:		N      0000	ORG 0
+    3:		B      00A0	LeftForward EQU P2.0
+    4:		B      00A1	LeftBackward EQU P2.1
+    5:		B      00A2	RightForward EQU P2.2
+    6:		B      00A3	RightBackward EQU P2.3
+    7:
+    8:	  0000	C2 A0		CLR LeftForward
+    9:	  0002	C2 A1		CLR LeftBackward
+   10:	  0004	C2 A2		CLR RightForward
+   11:	  0006	C2 A3		CLR RightBackward
+   12:
+   13:	  0008	75 89 20	MOV TMOD, #00100000B	;Mode 2 for timer 1 (8 bit auto reload)
+   14:	  000B	75 8D FD	MOV TH1, #0FDH		;setting baud rate 9600
+   15:	  000E	75 98 50	MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
+   16:
+   17:	  0011	D2 8E		SETB TR1	;Run timer 1
+   18:	  0013	30 98 FD	Receive:JNB RI, $	;Waiting for receive interrupt flag
+   19:	  0016	E5 99			MOV A, SBUF	;Move received character to A
+   20:	  0018	C2 98			CLR RI		;Clear receive interrupt flag
+   21:	  001A	FC			MOV R4, A
+   22:	  001B	C3			Switch:	CLR C		;Clear carry flag befor using SUBB for comparing
+   23:	  001C	94 66				SUBB A, #'f'	;Compare A to 1
+   24:	  001E	60 0E				JZ MoveForward	;If A = 1 turn on LED
+   25:
+   26:	  0020	EC				MOV A, R4;
+   27:	  0021	C3				CLR C		;Clear carry flag befor using SUBB for comparing
+   28:	  0022	94 62				SUBB A, #'b'	;Compare A to 0
+   29:	  0024	60 13				JZ MoveBackward	;If A = 0 turn off LED
+   30:
+   31:	  0026	EC				MOV A, R4;
+   32:	  0027	C3				CLR C		;Clear carry flag befor using SUBB for comparing
+   33:	  0028	94 73				SUBB A, #'s'	;Compare A to 0
+   34:	  002A	60 18				JZ Stop	;If A = 0 turn off LED
+   35:
+   36:
+   37:	  002C	80 E5				SJMP Receive	;Jump back to Receive
+   38:
+   39:	  002E			MoveForward:
+   40:	  002E	C2 A3			CLR RightBackward
+   41:	  0030	C2 A1			CLR LeftBackward
+   42:	  0032	D2 A2			SETB RightForward
+   43:	  0034	D2 A0			SETB LeftForward
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
+
+
+
+ Line  I  Addr  Code            Source
+
+   44:	  0036	02 00 4C		JMP FeedBck
+   45:
+   46:	  0039			MoveBackward:
+   47:	  0039	C2 A2			CLR RightForward
+   48:	  003B	C2 A0			CLR LeftForward
+   49:	  003D	D2 A3			SETB RightBackward
+   50:	  003F	D2 A1			SETB LeftBackward
+   51:	  0041	02 00 4C		JMP FeedBck
+   52:
+   53:	  0044	C2 A3		Stop:	CLR RightBackward
+   54:	  0046	C2 A1			CLR LeftBackward
+   55:	  0048	C2 A2			CLR RightForward
+   56:	  004A	C2 A0			CLR LeftForward
+   57:
+   58:	  004C	8C 99		FeedBck:MOV SBUF, R4
+   59:	  004E	30 99 FD		JNB TI, $
+   60:	  0051	C2 99			CLR TI
+   61:	  0053	80 BE			SJMP Receive	;Jump back to Receive
+   62:
+   63:
+   64:
+   65:
+   66:				END
+
+
+
+
+
+                     register banks used:  ---
+
+                     no errors
+
+
+
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
+
+
+
+
+
+	       L I S T   O F   S Y M B O L S
+	       =============================
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+??ASEM_51			  NUMBER    8051
+??VERSION			  NUMBER    0130
+AC				  BIT	      D6
+ACC				  DATA	      E0
+B				  DATA	      F0
+CY				  BIT	      D7
+DPH				  DATA	      83
+DPL				  DATA	      82
+EA				  BIT	      AF
+ES				  BIT	      AC
+ET0				  BIT	      A9
+ET1				  BIT	      AB
+EX0				  BIT	      A8
+EX1				  BIT	      AA
+EXTI0				  CODE	    0003
+EXTI1				  CODE	    0013
+F0				  BIT	      D5
+FEEDBCK				  CODE	    004C	  58
+IE				  DATA	      A8
+IE0				  BIT	      89
+IE1				  BIT	      8B
+INT0				  BIT	      B2
+INT1				  BIT	      B3
+IP				  DATA	      B8
+IT0				  BIT	      88
+IT1				  BIT	      8A
+LEFTBACKWARD			  NUMBER    00A1	   4
+LEFTFORWARD			  NUMBER    00A0	   3
+MOVEBACKWARD			  CODE	    0039	  46
+MOVEFORWARD			  CODE	    002E	  39
+OV				  BIT	      D2
+P				  BIT	      D0
+P0				  DATA	      80
+P1				  DATA	      90
+P2				  DATA	      A0
+P3				  DATA	      B0
+PCON				  DATA	      87
+PS				  BIT	      BC
+PSW				  DATA	      D0
+PT0				  BIT	      B9
+PT1				  BIT	      BB
+PX0				  BIT	      B8
+PX1				  BIT	      BA
+RB8				  BIT	      9A
+RD				  BIT	      B7
+RECEIVE				  CODE	    0013	  18
+REN				  BIT	      9C
+RESET				  CODE	    0000
+RI				  BIT	      98
+RIGHTBACKWARD			  NUMBER    00A3	   6
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
+
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+RIGHTFORWARD			  NUMBER    00A2	   5
+RS0				  BIT	      D3
+RS1				  BIT	      D4
+RXD				  BIT	      B0
+SBUF				  DATA	      99
+SCON				  DATA	      98
+SINT				  CODE	    0023
+SM0				  BIT	      9F
+SM1				  BIT	      9E
+SM2				  BIT	      9D
+SP				  DATA	      81
+STOP				  CODE	    0044	  53
+SWITCH				  CODE	    001B	  22
+T0				  BIT	      B4
+T1				  BIT	      B5
+TB8				  BIT	      9B
+TCON				  DATA	      88
+TF0				  BIT	      8D
+TF1				  BIT	      8F
+TH0				  DATA	      8C
+TH1				  DATA	      8D
+TI				  BIT	      99
+TIMER0				  CODE	    000B
+TIMER1				  CODE	    001B
+TL0				  DATA	      8A
+TL1				  DATA	      8B
+TMOD				  DATA	      89
+TR0				  BIT	      8C
+TR1				  BIT	      8E
+TXD				  BIT	      B1
+WR				  BIT	      B6
