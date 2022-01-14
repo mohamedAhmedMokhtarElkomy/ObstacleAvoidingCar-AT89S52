@@ -1,0 +1,294 @@
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 1
+
+
+
+
+
+       MCS-51 Family Macro Assembler   A S E M - 5 1   V 1.3
+       =====================================================
+
+
+
+	Source File:	C:\Microcontroller project\microprocessor\MoveBackwardLessThan4m\code\bckLess4M.asm
+	Object File:	C:\Microcontroller project\microprocessor\MoveBackwardLessThan4m\code\bckLess4M.hex
+	List File:	C:\Microcontroller project\microprocessor\MoveBackwardLessThan4m\code\bckLess4M.lst
+
+
+
+ Line  I  Addr  Code            Source
+
+    1:		N      0000	ORG 0000H; location where execution of the program starts from
+    2:	  0000	02 20 00	LJMP MAIN; LJMP used to bypass the ISR
+    3:
+    4:		N      1000	ORG 1000H; location for ISR for both TI and RI
+    5:	  1000	C2 97		CLR P1.7
+    6:	  1002	C2 98		CLR RI; clears RI flag
+    7:	  1004	32		RETI; transfers control to main
+    8:
+    9:		N      2000	ORG 2000H; location of the starting address of the program code
+   10:	  2000	D2 97		MAIN:SETB P1.7
+   11:	  2002	75 89 20	      MOV TMOD, #20H; selects timer 1 mode 2 for generating baud rate
+   12:	  2005	75 89 21	      MOV TMOD, #00100001B ;set timer0 as mode 1 16-bit
+   13:	  2008	75 8D FD	      MOV TH1, #0FDH; generates a baud rate of 9600
+   14:	  200B	75 98 50	      MOV SCON, #50H; selects mode 1 with the receiver enabled
+   15:	  200E	75 A8 90	      MOV IE, #10010000B; enables serial interrupt which can be caused by both TI/RI
+   16:	  2011	D2 8E		      SETB TR1; starts timer1
+   17:
+   18:
+   19:		B      0090	LeftForward EQU P1.0
+   20:		B      0091	LeftBackward EQU P1.1
+   21:		B      0092	RightForward EQU P1.2
+   22:		B      0093	RightBackward EQU P1.3
+   23:
+   24:	  2013	D2 97		SETB P1.7
+   25:
+   26:		B      00A0	TRIG EQU P2.0
+   27:		B      00A1	ECHO EQU P2.1
+   28:
+   29:	  2015	C2 A0		CLR TRIG		; sets P2.0(TRIG) as output for sending trigger
+   30:	  2017	D2 A1		SETB ECHO		; sets P2.1(ECHO) as input for receiving echo
+   31:
+   32:	  2019	C2 90		CLR LeftForward		; sets P1.0(LeftForward) as output for sending trigger
+   33:	  201B	C2 91		CLR LeftBackward	; sets P1.1(LeftBackward) as output for sending trigger
+   34:	  201D	C2 92		CLR RightForward	; sets P1.2(RightForward) as output for sending trigger
+   35:	  201F	C2 93		CLR RightBackward	; sets P1.3(RightBackward) as output for sending trigger
+   36:
+   37:				;TRIG CODE
+   38:	  2021			AutoDriveMode:
+   39:
+   40:	  2021	D2 A0			SETB TRIG		; starts the trigger pulse
+   41:	  2023	11 7B			ACALL Delay10M     	; Delay 10uS width for the trigger pulse
+   42:	  2025	C2 A0			CLR TRIG         	; ends the trigger pulse
+   43:
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
+
+
+
+ Line  I  Addr  Code            Source
+
+   44:	  2027	30 A1 FD		JNB ECHO,$    		; loops here until echo is received
+   45:
+   46:	  202A	11 59			ACALL CalcDistance
+   47:	  202C	20 8D 0D		JB TF0, MoveForward
+   48:	  202F	30 8D 14		JNB TF0, MoveBackward
+   49:
+   50:
+   51:	  2032	11 67		x:	ACALL DelaySec		  ;Delay 1 sec
+   52:	  2034	74 61			MOV A, #'a'
+   53:	  2036	F5 99			MOV SBUF, A ; moves received data to SBUF
+   54:	  2038	F5 A0		      	MOV P2, A ; sends data to P2
+   55:	  203A	80 E5			SJMP AutoDriveMode        ;short jumps to MAIN loop
+   56:
+   57:	  203C			MoveForward:
+   58:	  203C	C2 93			CLR RightBackward
+   59:	  203E	C2 91			CLR LeftBackward
+   60:	  2040	D2 92			SETB RightForward
+   61:	  2042	D2 90			SETB LeftForward
+   62:	  2044	80 EC			JMP x
+   63:
+   64:	  2046			MoveBackward:
+   65:	  2046	C2 92			CLR RightForward
+   66:	  2048	C2 90			CLR LeftForward
+   67:	  204A	D2 93			SETB RightBackward
+   68:	  204C	D2 91			SETB LeftBackward
+   69:	  204E	80 E2			JMP x
+   70:
+   71:	  2050			StopCar:
+   72:	  2050	C2 93			CLR RightBackward
+   73:	  2052	C2 91			CLR LeftBackward
+   74:	  2054	C2 92			CLR RightForward
+   75:	  2056	C2 90			CLR LeftForward
+   76:	  2058	22			RET
+   77:
+   78:	  2059			CalcDistance:
+   79:					;Loop until ECHO pin is low
+   80:				;	MOV TMOD, #00000001B	;set timer0 as mode 1 16-bit
+   81:					;Start counting ticks from 44103D => AC47
+   82:	  2059	75 8A 47		MOV TL0, #47H
+   83:	  205C	75 8C AC		MOV TH0, #0ACH
+   84:	  205F	D2 8C			SETB TR0	;start timer 0
+   85:
+   86:					;TODO LOOP while ECHO 1 and TF0 is 0
+   87:	  2061	20 A1 FD		JB ECHO, $	;If ECHO is high loop to echo is 1
+   88:	  2064	C2 8C			CLR TR0
+   89:
+   90:	  2066	22		RET
+   91:
+   92:
+   93:				;TODO store old value of R7
+   94:	  2067			DelaySec:
+   95:				;    	MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
+   96:	  2067	7F 14		    	MOV R7, #20D
+   97:				    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
+   98:					;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
+   99:	  2069				DelaySecLoop:
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
+
+
+
+ Line  I  Addr  Code            Source
+
+  100:	  2069	75 8A 00	    		MOV TL0, #00H
+  101:	  206C	75 8C 4C	    		MOV TH0, #4CH
+  102:	  206F	D2 8C		    		SETB TR0	;Start timer 0
+  103:
+  104:	  2071	30 8D FD	    		JNB TF0, $	;Loop until Timer 0 overflow = 1
+  105:	  2074	C2 8C		    		CLR TR0		;Stop timer 0
+  106:	  2076	C2 8D		    		CLR TF0		;Clear overFlow
+  107:
+  108:	  2078	DF EF		    		DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
+  109:
+  110:				;    	POP 07H
+  111:	  207A	22		RET
+  112:
+  113:				;Delay 10 micro sec
+  114:	  207B			Delay10M:
+  115:
+  116:
+  117:	  207B	75 8A F7		MOV TL0, #0F7H
+  118:	  207E	75 8C FF		MOV TH0, #0FFH
+  119:
+  120:	  2081	D2 8C			SETB TR0
+  121:
+  122:	  2083	30 8D FD		JNB TF0, $
+  123:	  2086	C2 8C			CLR TR0
+  124:	  2088	C2 8D			CLR TF0
+  125:	  208A	22		RET
+  126:
+  127:
+  128:	  208B			SERIAL:
+  129:	  208B	11 50			ACALL StopCar
+  130:	  208D	20 99 05	JB TI, TRANS; if the interrupt is caused by T1 control is transferred to trans as the old data has b
+				een transferred and new data can be sent to the SBUF
+  131:	  2090	E5 99		        MOV A, SBUF; otherwise the interrupt was caused due to RI and received data is put into the
+				accumulator.
+  132:	  2092	C2 98		        CLR RI; clears RI flag
+  133:	  2094	32		        RETI; transfers control to main
+  134:	  2095	C2 99		TRANS: CLR TI;  clears TI flag
+  135:	  2097	32		       RETI;  transfers control to main
+  136:
+  137:
+  138:				END
+
+
+
+
+
+                     register banks used:  ---
+
+                     no errors
+
+
+
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
+
+
+
+
+
+	       L I S T   O F   S Y M B O L S
+	       =============================
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+??ASEM_51			  NUMBER    8051
+??VERSION			  NUMBER    0130
+AC				  BIT	      D6
+ACC				  DATA	      E0
+AUTODRIVEMODE			  CODE	    2021	  38
+B				  DATA	      F0
+CALCDISTANCE			  CODE	    2059	  78
+CY				  BIT	      D7
+DELAY10M			  CODE	    207B	 114
+DELAYSEC			  CODE	    2067	  94
+DELAYSECLOOP			  CODE	    2069	  99
+DPH				  DATA	      83
+DPL				  DATA	      82
+EA				  BIT	      AF
+ECHO				  NUMBER    00A1	  27
+ES				  BIT	      AC
+ET0				  BIT	      A9
+ET1				  BIT	      AB
+EX0				  BIT	      A8
+EX1				  BIT	      AA
+EXTI0				  CODE	    0003
+EXTI1				  CODE	    0013
+F0				  BIT	      D5
+IE				  DATA	      A8
+IE0				  BIT	      89
+IE1				  BIT	      8B
+INT0				  BIT	      B2
+INT1				  BIT	      B3
+IP				  DATA	      B8
+IT0				  BIT	      88
+IT1				  BIT	      8A
+LEFTBACKWARD			  NUMBER    0091	  20
+LEFTFORWARD			  NUMBER    0090	  19
+MAIN				  CODE	    2000	  10
+MOVEBACKWARD			  CODE	    2046	  64
+MOVEFORWARD			  CODE	    203C	  57
+OV				  BIT	      D2
+P				  BIT	      D0
+P0				  DATA	      80
+P1				  DATA	      90
+P2				  DATA	      A0
+P3				  DATA	      B0
+PCON				  DATA	      87
+PS				  BIT	      BC
+PSW				  DATA	      D0
+PT0				  BIT	      B9
+PT1				  BIT	      BB
+PX0				  BIT	      B8
+PX1				  BIT	      BA
+RB8				  BIT	      9A
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 5
+
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
+RD				  BIT	      B7
+REN				  BIT	      9C
+RESET				  CODE	    0000
+RI				  BIT	      98
+RIGHTBACKWARD			  NUMBER    0093	  22
+RIGHTFORWARD			  NUMBER    0092	  21
+RS0				  BIT	      D3
+RS1				  BIT	      D4
+RXD				  BIT	      B0
+SBUF				  DATA	      99
+SCON				  DATA	      98
+SERIAL				  CODE	    208B	 128
+SINT				  CODE	    0023
+SM0				  BIT	      9F
+SM1				  BIT	      9E
+SM2				  BIT	      9D
+SP				  DATA	      81
+STOPCAR				  CODE	    2050	  71
+T0				  BIT	      B4
+T1				  BIT	      B5
+TB8				  BIT	      9B
+TCON				  DATA	      88
+TF0				  BIT	      8D
+TF1				  BIT	      8F
+TH0				  DATA	      8C
+TH1				  DATA	      8D
+TI				  BIT	      99
+TIMER0				  CODE	    000B
+TIMER1				  CODE	    001B
+TL0				  DATA	      8A
+TL1				  DATA	      8B
+TMOD				  DATA	      89
+TR0				  BIT	      8C
+TR1				  BIT	      8E
+TRANS				  CODE	    2095	 134
+TRIG				  NUMBER    00A0	  26
+TXD				  BIT	      B1
+WR				  BIT	      B6
+X				  CODE	    2032	  51
