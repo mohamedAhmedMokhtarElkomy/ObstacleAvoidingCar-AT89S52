@@ -31,36 +31,36 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
    11:		B      00A1	ECHO EQU P2.1
    12:	  0008	D2 A1		SETB ECHO              ; sets ECHO as input for receiving echo
    13:
-   14:	  000A	74 00		MOV A, #0H
-   15:
-   16:	  000C			MAIN:   ;TRIG CODE
-   17:	  000C	D2 A0			SETB TRIG		; starts the trigger pulse
-   18:	  000E	11 7B			ACALL Delay10M     	; Delay 10uS width for the trigger pulse
-   19:	  0010	C2 A0			CLR TRIG         	; ends the trigger pulse
-   20:	  0012	30 A1 FD		JNB ECHO,$    		; loops here until echo is received
-   21:
-   22:	  0015	11 4B			ACALL CalcDistance
-   23:
-   24:	  0017	11 64			ACALL DelaySec	 ;Delay 1 sec
-
-   25:	  0019	80 F1			SJMP MAIN        ;short jumps to MAIN loop
+   14:		B      00A2	USGROUND EQU P2.2
+   15:	  000A	D2 A2		SETB USGROUND
+   16:
+   17:	  000C	74 00		MOV A, #0H
+   18:
+   19:	  000E			MAIN:   ;TRIG CODE
+   20:	  000E	D2 A0			SETB TRIG		; starts the trigger pulse
+   21:	  0010	11 8D			ACALL Delay10M     	; Delay 10uS width for the trigger pulse
+   22:	  0012	C2 A0			CLR TRIG         	; ends the trigger pulse
+   23:	  0014	30 A1 FD		JNB ECHO,$    		; loops here until echo is received
+   24:
+   25:	  0017	11 4D			ACALL CalcDistance
    26:
-   27:				;Display LOOP for send char to serial port for printing it on virtual terminal
-   28:	  001B	75 89 20	DLOOP:	MOV TMOD, #20H	; or 00100000B => Mode 2 for Timer 1 (8bit Auto Reload)
-   29:	  001E	75 8D FD		MOV TH1, #0FDH	;Setting BaudRate of 9600 (-3). SMOD is 0 by default
-   30:	  0021	75 98 50		MOV SCON, #50H	;Serial Mode 1, REN Enabled or #01010000B
-   31:	  0024	D2 8E			SETB TR1
-   32:
-   33:	  0026	EE			MOV A, R6
-   34:	  0027	7F 00			MOV R7, #0D	;Counter to store count of numbers
-   35:				;PrintDEC, print => for converting hex value to decimal then print each number
-   36:	  0029				PrintDEC:
-   37:	  0029	0F				INC R7
-   38:	  002A	75 F0 0A			MOV B, #10D
-   39:	  002D	84				DIV AB			;the quotient is stored in the accumulator and the remainder
-				 is stored in the B register
-   40:	  002E	C0 F0				PUSH B
-   41:	  0030	B4 00 F6			CJNE A, #0D, PrintDEC	;Compare the first two operands and branches to the specifie
+   27:	  0019	11 76			ACALL DelaySec	 ;Delay 1 sec
+
+   28:	  001B	80 F1			SJMP MAIN        ;short jumps to MAIN loop
+   29:
+   30:				;Display LOOP for send char to serial port for printing it on virtual terminal
+   31:	  001D	75 89 20	DLOOP:	MOV TMOD, #20H	; or 00100000B => Mode 2 for Timer 1 (8bit Auto Reload)
+   32:	  0020	75 8D FD		MOV TH1, #0FDH	;Setting BaudRate of 9600 (-3). SMOD is 0 by default
+   33:	  0023	75 98 50		MOV SCON, #50H	;Serial Mode 1, REN Enabled or #01010000B
+   34:	  0026	D2 8E			SETB TR1
+   35:
+   36:	  0028	EE			MOV A, R6
+   37:	  0029	7F 00			MOV R7, #0D	;Counter to store count of numbers
+   38:				;PrintDEC, print => for converting hex value to decimal then print each number
+   39:	  002B				PrintDEC:
+   40:	  002B	0F				INC R7
+   41:	  002C	75 F0 0A			MOV B, #10D
+   42:	  002F	84				DIV AB			;the quotient is stored in the accumulator and the remainder
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
 
@@ -68,62 +68,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
+				 is stored in the B register
+   43:	  0030	C0 F0				PUSH B
+   44:	  0032	B4 00 F6			CJNE A, #0D, PrintDEC	;Compare the first two operands and branches to the specifie
 				d destination if their values are not equal
-   42:
-   43:	  0033	D0 05			print:	POP 05H			;POP to 05H which is R5
-   44:	  0035	ED				MOV A, R5
-   45:	  0036	24 30				ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
-   46:	  0038	F5 99				MOV SBUF, A
-   47:	  003A	30 99 FD			JNB TI, $
-   48:	  003D	C2 99				CLR TI
-   49:						;ACALL DelaySec		;TODO i think it is not useful
-   50:	  003F	DF F2				DJNZ R7, print		;decrements the byte indicated by the first operand and, if
+   45:
+   46:	  0035	D0 05			print:	POP 05H			;POP to 05H which is R5
+   47:	  0037	ED				MOV A, R5
+   48:	  0038	24 30				ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
+   49:	  003A	F5 99				MOV SBUF, A
+   50:	  003C	30 99 FD			JNB TI, $
+   51:	  003F	C2 99				CLR TI
+   52:						;ACALL DelaySec		;TODO i think it is not useful
+   53:	  0041	DF F2				DJNZ R7, print		;decrements the byte indicated by the first operand and, if
 				the resulting value is not zero, branches to the address specified in the second operand.
-   51:	  0041	74 20				MOV A, #' '
-   52:	  0043	F5 99				MOV SBUF, A
-   53:	  0045	30 99 FD			JNB TI, $
-   54:	  0048	C2 99				CLR TI
-   55:
-   56:	  004A	22		RET
-   57:
-   58:	  004B			CalcDistance:
-   59:					;Loop until ECHO pin is low
-   60:	  004B	75 89 01		MOV TMOD, #00000001B	;set timer0 as mode 1 16-bit
-   61:					;Start counting ticks from 44103D => AC47
-   62:	  004E	75 8A 47		MOV TL0, #47H
-   63:	  0051	75 8C AC		MOV TH0, #0ACH
-   64:
-   65:	  0054	D2 8C			SETB TR0	;start timer 0
-   66:
-   67:					;TODO LOOP while ECHO 1 and TF0 is 0
-   68:	  0056	20 A1 FD		JB ECHO, $	;If ECHO is high loop to echo is 1
-   69:	  0059	C2 8C			CLR TR0
-   70:
-   71:					;Move TH0 to R6 to be printed
-   72:	  005B	AE 8C			MOV R6, TH0
-   73:	  005D	11 1B			ACALL DLOOP
-   74:
-   75:					;Move TL0 to R6 to be printed
-   76:	  005F	AE 8A			MOV R6, TL0
-   77:	  0061	11 1B			ACALL DLOOP
-   78:	  0063	22		RET
-   79:
-   80:				;TODO store old value of R7
-   81:	  0064			DelaySec:
-   82:	  0064	75 89 01	    	MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
-   83:	  0067	7F 14		    	MOV R7, #20D
-   84:				    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
-   85:					;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
-   86:	  0069				DelaySecLoop:
-   87:	  0069	75 8A 00	    		MOV TL0, #00H
-   88:	  006C	75 8C 4C	    		MOV TH0, #4CH
-   89:	  006F	D2 8C		    		SETB TR0	;Start timer 0
-   90:
-   91:	  0071	30 8D FD	    		JNB TF0, $	;Loop until Timer 0 overflow = 1
-   92:	  0074	C2 8C		    		CLR TR0		;Stop timer 0
-   93:	  0076	C2 8D		    		CLR TF0		;Clear overFlow
+   54:	  0043	74 20				MOV A, #' '
+   55:	  0045	F5 99				MOV SBUF, A
+   56:	  0047	30 99 FD			JNB TI, $
+   57:	  004A	C2 99				CLR TI
+   58:
+   59:	  004C	22		RET
+   60:
+   61:	  004D			CalcDistance:
+   62:					;Loop until ECHO pin is low
+   63:	  004D	75 89 01		MOV TMOD, #00000001B	;set timer0 as mode 1 16-bit
+   64:					;Start counting ticks from 44103D => AC47
+   65:	  0050	75 8A 47		MOV TL0, #47H
+   66:	  0053	75 8C AC		MOV TH0, #0ACH
+   67:
+   68:	  0056	D2 8C			SETB TR0	;start timer 0
+   69:
+   70:					;TODO LOOP while ECHO 1 and TF0 is 0
+   71:					;JB ECHO, $	;If ECHO is high loop to echo is 1
+   72:					;CLR TR0
+   73:
+   74:	  0058	20 A1 03		checkecho:JB ECHO, checkof
+   75:	  005B	02 00 6B		JMP clear
+   76:	  005E	20 8D 02		checkof:JB TF0, restart
+   77:	  0061	80 F5				JMP checkecho
+   78:
+   79:	  0063	C2 A2		restart:CLR P2.2
+   80:	  0065	11 76			ACALL DelaySec
+   81:	  0067	11 76			ACALL DelaySec
+   82:	  0069	D2 A2			SETB P2.2
+   83:
+   84:	  006B	C2 8C			clear:CLR TR0
+   85:
+   86:					;Move TH0 to R6 to be printed
+   87:	  006D	AE 8C			MOV R6, TH0
+   88:	  006F	11 1D			ACALL DLOOP
+   89:
+   90:					;Move TL0 to R6 to be printed
+   91:	  0071	AE 8A			MOV R6, TL0
+   92:	  0073	11 1D			ACALL DLOOP
+   93:	  0075	22		RET
    94:
-   95:	  0078	DF EF		    		DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
+   95:				;TODO store old value of R7
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
 
@@ -131,38 +131,202 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-   96:
-   97:				;    	POP 07H
-   98:	  007A	22		RET
-   99:
-  100:				;Delay 10 micro sec
-  101:	  007B			Delay10M:
-  102:	  007B	75 89 01		MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
-  103:	  007E	75 8A F7		MOV TL0, #0F7H
-  104:	  0081	75 8C FF		MOV TH0, #0FFH
+   96:	  0076			DelaySec:
+   97:	  0076	75 89 01	    	MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
+   98:	  0079	7F 14		    	MOV R7, #20D
+   99:				    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
+  100:					;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
+  101:	  007B				DelaySecLoop:
+  102:	  007B	75 8A 00	    		MOV TL0, #00H
+  103:	  007E	75 8C 4C	    		MOV TH0, #4CH
+  104:	  0081	D2 8C		    		SETB TR0	;Start timer 0
   105:
-  106:	  0084	D2 8C			SETB TR0
-  107:
-  108:	  0086	30 8D FD		JNB TF0, $
-  109:	  0089	C2 8C			CLR TR0
-  110:	  008B	C2 8D			CLR TF0
-  111:	  008D	22		RET
-  112:
-  113:				;Delay 1000 micro sec
-  114:	  008E			Delay1000M:
-  115:	  008E	75 89 01		MOV TMOD, #00000001B ;set timer0 as mode 2 16-bit
-  116:	  0091	75 8A 66		MOV TL0, #66H
-  117:	  0094	75 8C FC		MOV TH0, #0FCH
-  118:
-  119:	  0097	D2 8C			SETB TR0
+  106:	  0083	30 8D FD	    		JNB TF0, $	;Loop until Timer 0 overflow = 1
+  107:	  0086	C2 8C		    		CLR TR0		;Stop timer 0
+  108:	  0088	C2 8D		    		CLR TF0		;Clear overFlow
+  109:
+  110:	  008A	DF EF		    		DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
+  111:
+  112:				;    	POP 07H
+  113:	  008C	22		RET
+  114:
+  115:				;Delay 10 micro sec
+  116:	  008D			Delay10M:
+  117:	  008D	75 89 01		MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
+  118:	  0090	75 8A F7		MOV TL0, #0F7H
+  119:	  0093	75 8C FF		MOV TH0, #0FFH
   120:
-  121:	  0099	30 8D FD		JNB TF0, $
-  122:	  009C	C2 8C			CLR TR0
-  123:	  009E	C2 8D			CLR TF0
-  124:	  00A0	22		RET
-  125:
-  126:	  00A1			close:
-  127:					END
+  121:	  0096	D2 8C			SETB TR0
+  122:
+  123:	  0098	30 8D FD		JNB TF0, $
+  124:	  009B	C2 8C			CLR TR0
+  125:	  009D	C2 8D			CLR TF0
+  126:	  009F	22		RET
+  127:
+  128:				;Delay 1000 micro sec
+  129:	  00A0			Delay1000M:
+  130:	  00A0	75 89 01		MOV TMOD, #00000001B ;set timer0 as mode 2 16-bit
+  131:	  00A3	75 8A 66		MOV TL0, #66H
+  132:	  00A6	75 8C FC		MOV TH0, #0FCH
+  133:
+  134:	  00A9	D2 8C			SETB TR0
+  135:
+  136:	  00AB	30 8D FD		JNB TF0, $
+  137:	  00AE	C2 8C			CLR TR0
+  138:	  00B0	C2 8D			CLR TF0
+  139:	  00B2	22		RET
+  140:
+  141:
+  142:
+  143:
+  144:
+  145:
+  146:
+  147:
+  148:
+  149:
+  150:
+  151:
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
+
+
+
+ Line  I  Addr  Code            Source
+
+  152:
+  153:
+  154:
+  155:
+  156:
+  157:
+  158:
+  159:
+  160:
+  161:
+  162:				;Subroutine UDIV32
+  163:				;32-Bit / 16-Bit to 32-Bit Quotient & Remainder Unsigned Divide
+  164:				;input: r3, r2, rl, r0 = Dividend X
+  165:				;D, r4 = Divisor Y
+  166:				;output: r3, r2, rl1, r0 = quotient Q of division Q = X/ Y
+  167:				;r7, r6, r5, rd = remainder
+  168:				;alters: acC, Tlags
+  169:	  00B3	C0 08		UDIV32: push 08 ;Save Register Bank 1
+  170:	  00B5	C0 09			push 09
+  171:	  00B7	C0 0A			push 0AH
+  172:	  00B9	C0 0B			push 0BH
+  173:	  00BB	C0 0C			push 0CH
+  174:	  00BD	C0 0D			push 0DH
+  175:	  00BF	C0 0E			push 0EH
+  176:	  00C1	C0 0F			push 0FH
+  177:	  00C3	C0 82			push dpl
+  178:	  00C5	C0 83			push dph
+  179:	  00C7	C0 F0			push B
+  180:	  00C9	D2 D3			setb RS0 ;Select Register Bank 1
+  181:	  00CB	7F 00			mov r7, #0 ;clear partial remainder
+  182:	  00CD	7E 00			mov r6, #0
+  183:	  00CF	7D 00			mov r5, #0
+  184:	  00D1	7C 00			mov r4, #0
+  185:	  00D3	75 F0 20		mov B, #32 ;Set loop coutt
+  186:	  00D6	C2 D3		div_lp32: clr RS0 ;Select Register Bank
+  187:	  00D8	C3			clr C ;clear carry flag
+  188:	  00D9	E8			mov a, r0 ;shift the highest bit of the
+  189:	  00DA	33			rlc a ;dividend into...
+  190:	  00DB	F8			mov r0, a
+  191:	  00DC	E9			mov a, r1
+  192:	  00DD	33			rlc a
+  193:	  00DE	F9			mov r1, a
+  194:	  00DF	EA			mov a, r2
+  195:	  00E0	33			rlc a
+  196:	  00E1	FA			mov r2, a
+  197:	  00E2	EB			mov a, r3
+  198:	  00E3	33			rlc a
+  199:	  00E4	FB			mov r3,a
+  200:	  00E5	D2 D3			setb RS0 ;Select Register Bank 1
+  201:	  00E7	EC			mov a, r4;...the lowest bit of the
+  202:	  00E8	33			rlc a; partial remainder
+  203:	  00E9	FC			mov r4, a
+  204:	  00EA	ED			mov a, r5
+  205:	  00EB	33			rlc a
+  206:	  00EC	FD			mov r5, a
+  207:	  00ED	EE			mov a, r6
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 5
+
+
+
+ Line  I  Addr  Code            Source
+
+  208:	  00EE	33			rlc a
+  209:	  00EF	FE			mov r6, a
+  210:	  00F0	EF			mov a, r7
+  211:	  00F1	33			rlc a
+  212:	  00F2	FF			mov r7, a
+  213:	  00F3	EC			mov a, r4;trial subt ract divisor from
+  214:	  00F4	C3			clr C;partial remainder
+  215:	  00F5	95 04			subb a, 04
+  216:	  00F7	F5 82			mov dpl, a
+  217:	  00F9	ED			mov a, r5
+  218:	  00FA	95 05			subb a, 05
+  219:	  00FC	F5 83			mov dph, a
+  220:	  00FE	EE			mov a, r6
+  221:	  00FF	94 00			subb a, #0
+  222:	  0101	F5 06			mov 06, a
+  223:	  0103	EF			mov a, r7
+  224:	  0104	94 00			subb a, #0
+  225:	  0106	F5 07			mov 07, a
+  226:	  0108	B3			cpl C;Complement external borrow
+  227:	  0109	50 08			jnc div_321;update partial remainder if borrow
+  228:	  010B	AF 07			mov r7, 07;update partial remainder
+  229:	  010D	AE 06			mov r6, 06
+  230:	  010F	AD 83			mov r5, dph
+  231:	  0111	AC 82			mov r4, dpl
+  232:	  0113	E8		div_321: mov a, r0;shift result bit into partial
+  233:	  0114	33			rlc a;quotient
+  234:	  0115	F8			mov r0, a
+  235:	  0116	E9			mov a, r1
+  236:	  0117	33			rlc a
+  237:	  0118	F9			mov r1, a
+  238:	  0119	EA			mov a, r2
+  239:	  011A	33			rlc a
+  240:	  011B	FA			mov r2, a
+  241:	  011C	EB			mov a, r3
+  242:	  011D	33			rlc a
+  243:	  011E	FB			mov r3,a
+  244:	  011F	D5 F0 B4		djnz B, div_lp32
+  245:	  0122	8F 07			mov 07, r7;put remainder, saved before the
+  246:	  0124	8E 06			mov 06,r6;last subt raction, in bank 0
+  247:	  0126	8D 05			mov 05, r5
+  248:	  0128	8C 04			mov 04, r4
+  249:	  012A	8B 03			mov 03, r3;put quotient in bank 0
+  250:	  012C	8A 02			mov 02, r2
+  251:	  012E	89 01			mov 01, r1
+  252:	  0130	88 00			mov 00, r0
+  253:	  0132	C2 D3			clr RS0
+  254:	  0134	D0 F0			pop B
+  255:	  0136	D0 83			pop dph
+  256:	  0138	D0 82			pop dpl
+  257:	  013A	D0 0F			pop 0FH;Retrieve Register Bank 1
+  258:	  013C	D0 0E			pop 0EH
+  259:	  013E	D0 0D			pop 0DH
+  260:	  0140	D0 0C			pop 0CH
+  261:	  0142	D0 0B			pop 0BH
+  262:	  0144	D0 0A			pop 0AH
+  263:	  0146	D0 09			pop 09
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 6
+
+
+
+ Line  I  Addr  Code            Source
+
+  264:	  0148	D0 08			pop 08
+  265:	  014A	22		ret
+  266:
+  267:
+  268:
+  269:	  014B			close:
+  270:					END
 
 
 
@@ -175,7 +339,7 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
 
 
-ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 7
 
 
 
@@ -192,14 +356,19 @@ SYMBOL				  TYPE     VALUE	LINE
 AC				  BIT	      D6
 ACC				  DATA	      E0
 B				  DATA	      F0
-CALCDISTANCE			  CODE	    004B	  58
-CLOSE				  CODE	    00A1	 126
+CALCDISTANCE			  CODE	    004D	  61
+CHECKECHO			  CODE	    0058	  74
+CHECKOF				  CODE	    005E	  76
+CLEAR				  CODE	    006B	  84
+CLOSE				  CODE	    014B	 269
 CY				  BIT	      D7
-DELAY1000M			  CODE	    008E	 114
-DELAY10M			  CODE	    007B	 101
-DELAYSEC			  CODE	    0064	  81
-DELAYSECLOOP			  CODE	    0069	  86
-DLOOP				  CODE	    001B	  28
+DELAY1000M			  CODE	    00A0	 129
+DELAY10M			  CODE	    008D	 116
+DELAYSEC			  CODE	    0076	  96
+DELAYSECLOOP			  CODE	    007B	 101
+DIV_321				  CODE	    0113	 232
+DIV_LP32			  CODE	    00D6	 186
+DLOOP				  CODE	    001D	  31
 DPH				  DATA	      83
 DPL				  DATA	      82
 EA				  BIT	      AF
@@ -220,7 +389,7 @@ INT1				  BIT	      B3
 IP				  DATA	      B8
 IT0				  BIT	      88
 IT1				  BIT	      8A
-MAIN				  CODE	    000C	  16
+MAIN				  CODE	    000E	  19
 OV				  BIT	      D2
 P				  BIT	      D0
 P0				  DATA	      80
@@ -228,25 +397,26 @@ P1				  DATA	      90
 P2				  DATA	      A0
 P3				  DATA	      B0
 PCON				  DATA	      87
-PRINT				  CODE	    0033	  43
-PRINTDEC			  CODE	    0029	  36
+PRINT				  CODE	    0035	  46
+PRINTDEC			  CODE	    002B	  39
 PS				  BIT	      BC
 PSW				  DATA	      D0
-PT0				  BIT	      B9
-PT1				  BIT	      BB
-PX0				  BIT	      B8
-PX1				  BIT	      BA
-RB8				  BIT	      9A
 
-ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 5
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 8
 
 
 
 SYMBOL				  TYPE     VALUE	LINE
 ------------------------------------------------------------
+PT0				  BIT	      B9
+PT1				  BIT	      BB
+PX0				  BIT	      B8
+PX1				  BIT	      BA
+RB8				  BIT	      9A
 RD				  BIT	      B7
 REN				  BIT	      9C
 RESET				  CODE	    0000
+RESTART				  CODE	    0063	  79
 RI				  BIT	      98
 RS0				  BIT	      D3
 RS1				  BIT	      D4
@@ -276,4 +446,6 @@ TR0				  BIT	      8C
 TR1				  BIT	      8E
 TRIG				  NUMBER    00A0	   8
 TXD				  BIT	      B1
+UDIV32				  CODE	    00B3	 169
+USGROUND			  NUMBER    00A2	  14
 WR				  BIT	      B6

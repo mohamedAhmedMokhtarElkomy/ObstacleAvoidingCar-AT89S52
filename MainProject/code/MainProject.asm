@@ -8,11 +8,18 @@ LJMP SERIALINT
 ;R3 for storing value of TH from ultrasonic echo
 ORG 30H
 START:
+MOV P0, #0
 LeftForward EQU P1.0
 LeftBackward EQU P1.1
 RightForward EQU P1.2
 RightBackward EQU P1.3
+CLR P1.4
+
 AutoLED EQU P1.7	;LED indicate if Auto mode is on or not
+OnLED EQU P1.6
+DetectedPin EQU P1.5
+CLR DetectedPin
+SETB OnLED
 
 TRIG EQU P2.0
 ECHO EQU P2.1
@@ -20,10 +27,10 @@ ECHO EQU P2.1
 CLR TRIG		; sets P2.0(TRIG) as output for sending trigger
 SETB ECHO		; sets P2.1(ECHO) as input for receiving echo
 
-CLR LeftForward		; sets P1.0(LeftForward) as output for sending trigger
-CLR LeftBackward	; sets P1.1(LeftBackward) as output for sending trigger
-CLR RightForward	; sets P1.2(RightForward) as output for sending trigger
-CLR RightBackward	; sets P1.3(RightBackward) as output for sending trigger
+CLR LeftForward		; sets P1.0(LeftForward) as output
+CLR LeftBackward	; sets P1.1(LeftBackward) as output
+CLR RightForward	; sets P1.2(RightForward) as output
+CLR RightBackward	; sets P1.3(RightBackward) as output
 
 ;Setup serial port and timer 1 for bluetooth
 MOV TMOD, #00100001B	;Mode 2 for timer 1 (8 bit auto reload)
@@ -32,7 +39,8 @@ MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
 SETB TR1		;Run timer 1
 MOV IE, #10000000B	;enables interrupt
 
-NormalMode: 
+NormalMode:
+	;The following to instruction to reset when returning from AutoDriveMode 
 	CLR AutoLED
 	ACALL StopCar
 	
@@ -82,19 +90,23 @@ JMP BckMain
 Jmvleft:ACALL MoveLeft
 JMP BckMain
 Jstop:ACALL StopCar
-JMP BckMain		
+JMP BckMain	
+	
 BckMain:SJMP Main	;Jump back to Main for looping
 ;;;;;;TRY TO OPTIMIZE;;;;;;
 
 
 ;AutoDriveMode is mode for auto move and detect objects
 AutoDriveMode:   
-	MOV IE, #10010000B; enables serial interrupt which can be caused by both TI/RI
-	SETB AutoLED
+	MOV IE, #10010000B	;enables serial interrupt which can be caused by both TI/RI
+	SETB AutoLED		;Turn on auto drive LED
 	
 TrigAgain:
 	CLR C
 	JNB AutoLED, NormalMode	;IF autoLed pin is 0 JMP to NormalMode
+
+	;TODO remove or solve it
+	CLR DetectedPin	
 	
 	SETB TRIG		; starts the trigger pulse
 	ACALL Delay10M     	; Delay 10uS width for the trigger pulse
@@ -103,9 +115,10 @@ TrigAgain:
 	JNB ECHO,$    		; loops here until echo is received
 
 	ACALL CalcDistance
-	
-	JB TF0, NoObj		
+	;TODO when transistor be used
+	JB TF0, NoObj	
 	ACALL Detected
+	CLR TF0
 	SJMP TrigAgain
 	
 NoObj:	ACALL MoveForward
@@ -150,24 +163,48 @@ StopCar:
 	CLR LeftForward
 	;ACALL FeedBck
 	RET
+	
+;If object detected MoveBack for 1 sec then move right for 2 sec	
 Detected:
-	CALL MoveBackward
+	SETB DetectedPin
+	ACALL MoveBackward
+	ACALL DelaySec
+	ACALL MOVERight
+	ACALL DelaySec
+	ACALL DelaySec
+	CLR DetectedPin 
 	RET
 	
 		
 CalcDistance:
 	;Loop until ECHO pin is low
 	;Start counting ticks from 44103D => AC47
+	;44103D for maximum distance
 	MOV TL0, #47H
 	MOV TH0, #0ACH
 
+	CLR TF0
 	SETB TR0	;start timer 0
 	
 	;TODO LOOP while ECHO 1 and TF0 is 0	
-	JB ECHO, $	;If ECHO is high loop to echo is 1 
-	CLR TR0
+	JB ECHO, $	;If ECHO is high loop to echo is 1 	
+	
+	;TODO
+	;CheckECHO:JB ECHO, CheckOF
+	;	JMP d
+	;CheckOF: JNB TF0, CheckECHO
+			;IF else
+		;ACALL RestartUS
+	d:CLR TR0
 
 RET
+
+;TODO
+;restart ultrasonic sensor
+RestartUS:
+CLR TR0
+RET
+
 
 ;Delay 10 micro sec
 Delay10M:
@@ -181,6 +218,25 @@ Delay10M:
 	CLR TR0
 	CLR TF0
 RET 
+
+DelaySec:
+	PUSH 07H
+    	MOV R7, #20D
+    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
+	;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
+	DelaySecLoop:
+    		MOV TL0, #00H
+    		MOV TH0, #4CH
+    		SETB TR0	;Start timer 0
+    	
+    		JNB TF0, $	;Loop until Timer 0 overflow = 1
+    		CLR TR0		;Stop timer 0
+    		CLR TF0		;Clear overFlow
+    	
+    		DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
+    	
+    	POP 07H
+RET
 	
 
 SERIALINT:
