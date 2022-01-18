@@ -93,7 +93,14 @@ JMP BckMain
 Jstop:ACALL StopCar
 JMP BckMain	
 	
-BckMain:SJMP Main	;Jump back to Main for looping
+BckMain:;SETB TRIG		; starts the trigger pulse
+	;ACALL Delay10M     	; Delay 10uS width for the trigger pulse
+	;CLR TRIG         	; ends the trigger pulse
+	
+	;JNB ECHO,$    		; loops here until echo is received
+
+	;ACALL CalcDistance
+	SJMP Main	;Jump back to Main for looping
 ;;;;;;TRY TO OPTIMIZE;;;;;;
 
 
@@ -117,12 +124,12 @@ TrigAgain:
 
 	ACALL CalcDistance
 	;TODO when transistor be used
-	JB TF0, NoObj	
-	ACALL Detected
-	CLR TF0
-	SJMP TrigAgain
+	;JB TF0, NoObj	
+	;ACALL Detected
 	
-NoObj:	ACALL MoveForward
+;	SJMP TrigAgain
+	
+	ACALL MoveForward
 	SJMP TrigAgain		;short jumps to again loop	
 		
 MoveForward:
@@ -176,6 +183,29 @@ Detected:
 	CLR DetectedPin 
 	RET
 	
+;Display LOOP for send char to serial port for printing it on virtual terminal
+DLOOP:	MOV A, #01H	; CLEAR LCD
+	;ACALL COMMANDWRT
+
+	MOV A, R6
+	MOV R7, #0D	;Counter to store count of numbers
+;PrintDEC, print => for converting hex value to decimal then print each number	
+	PrintDEC:
+		INC R7
+		MOV B, #10D
+		DIV AB			;the quotient is stored in the accumulator and the remainder is stored in the B register
+		PUSH B
+		CJNE A, #0D, PrintDEC	;Compare the first two operands and branches to the specified destination if their values are not equal
+	
+	print:	POP 05H			;POP to 05H which is R5
+		MOV A, R5
+		ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
+		MOV R1, A;TODO REMOVE
+		;PRINTING A CHARACTER
+		;CALL SENDCHAR
+
+	
+RET	
 		
 CalcDistance:
 	;Loop until ECHO pin is low
@@ -188,7 +218,22 @@ CalcDistance:
 	SETB TR0	;start timer 0
 	
 	;TODO LOOP while ECHO 1 and TF0 is 0	
-	JB ECHO, $	;If ECHO is high loop to echo is 1 	
+	JB ECHO, $	;If ECHO is high loop to echo is 1 
+	
+	MOV A, #0C1H
+	CLR C
+	SUBB A, TH0
+	ANL A, #10000000B
+	JNZ NoObj
+	MOV A, #35H
+	CLR C
+	SUBB A, TL0
+	ANL A, #10000000B
+	JNZ NoObj
+	ACALL Detected
+	
+	;C135 for i meter
+		
 	
 	;TODO
 	;CheckECHO:JB ECHO, CheckOF
@@ -196,7 +241,8 @@ CalcDistance:
 	;CheckOF: JNB TF0, CheckECHO
 			;IF else
 		;ACALL RestartUS
-	d:CLR TR0
+NoObj:	CLR TR0
+	CLR TF0
 
 RET
 
@@ -238,7 +284,39 @@ DelaySec:
     	
     	POP 07H
 RET
+
+		
+;SENDING A CHARACHTER SUBROUTINE
+;SENDCHAR:
+;	ACALL DATAWRT
+;	ACALL DELAY
+;	RET		
+
+;COMMAND SUB-ROUTINE FOR LCD CONTROL
+;COMMANDWRT:
+
+ ;   	MOV P1, A ;SEND DATA TO P1
+;	CLR RS	;RS=0 FOR COMMAND
+;	CLR RW	;R/W=0 FOR WRITE
+;	SETB EN	;E=1 FOR HIGH PULSE
+;	ACALL DELAY
+;	CLR EN	;E=0 FOR H-L PULSE
 	
+;	RET
+
+;SUBROUTINE FOR DATA LACTCHING TO LCD
+;DATAWRT:
+
+;	MOV DATABUS, A
+ ;   	SETB RS	;RS=1 FOR DATA
+  ;  	CLR RW
+   ; 	SETB EN
+    ;	ACALL DELAY
+	;CLR EN
+
+	;RET
+
+		
 
 SERIALINT:
 	JB TI, TRANS; if the interrupt is caused by T1 control is transferred to trans as the old data has been transferred and new data can be sent to the SBUF
@@ -247,6 +325,15 @@ SERIALINT:
         RETI; transfers control to main
         
 TRANS:	RETI;  transfers control to main
+
+
+DELAY:
+    	MOV R0, #10 ;DELAY. HIGHER VALUE FOR FASTER CPUS
+Y:	MOV R1, #255
+	DJNZ R1, $
+	DJNZ R0, Y
+
+	RET
 
 END
 
