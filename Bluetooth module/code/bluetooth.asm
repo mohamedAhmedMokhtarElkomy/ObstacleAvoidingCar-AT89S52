@@ -2,7 +2,8 @@
 ORG 0
 LED EQU P2.0
 CLR LED
-
+MOV P1, #0
+SETB P1.0
 MOV TMOD, #00100000B	;Mode 2 for timer 1 (8 bit auto reload)
 MOV TH1, #0FDH		;setting baud rate 9600
 MOV SCON, #01010000B	;Serial Mode 1, REN Enabled

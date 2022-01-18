@@ -22,7 +22,7 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
     2:	  0000	02 00 30	LJMP START; LJMP used to bypass the ISR
     3:
     4:		N      0023	ORG 0023H; location for ISR for both TI and RI
-    5:	  0023	02 01 42	LJMP SERIALINT
+    5:	  0023	02 01 37	LJMP SERIALINT
     6:
     7:				;R4 store received character
     8:				;R3 for storing value of TH from ultrasonic echo
@@ -57,9 +57,9 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
    37:	  0048	75 8D FD	MOV TH1, #0FDH		;setting baud rate 9600
    38:	  004B	75 98 50	MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
    39:	  004E	D2 8E		SETB TR1		;Run timer 1
-   40:	  0050	75 A8 80	MOV IE, #10000000B	;enables interrupt
+   40:				;MOV IE, #10000000B	;enables interrupt
    41:
-   42:	  0053			NormalMode:
+   42:	  0050			NormalMode:
    43:					;The following to instruction to reset when returning from AutoDriveMode
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
@@ -68,62 +68,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-   44:	  0053	C2 97			CLR AutoLED
-   45:	  0055	11 E4			ACALL StopCar
-   46:
-   47:	  0057	30 98 FD	Main:	JNB RI, $	;Waiting for receive interrupt flag
-   48:	  005A	E5 99			MOV A, SBUF	;Move received character to A
-   49:	  005C	C2 98			CLR RI		;Clear receive interrupt flag
-   50:	  005E	FC			MOV R4, A
-   51:
-   52:				;;;;;;;;Switch;;;;;;;;
-   53:	  005F	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   54:	  0060	94 66			SUBB A, #'f'	;Compare A to 'f'
-   55:	  0062	60 1E			JZ Jmvfwd	;If A = 'f' MoveForward
-   56:
-   57:	  0064	EC			MOV A, R4;
-   58:	  0065	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   59:	  0066	94 62			SUBB A, #'b'	;Compare A to 'b'
-   60:	  0068	60 1D			JZ Jmvbwd	;If A = 'b' MoveBackward
-   61:
-   62:	  006A	EC			MOV A, R4;
-   63:	  006B	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   64:	  006C	94 72			SUBB A, #'r'	;Compare A to 'r'
-   65:	  006E	60 1C			JZ Jmvright	;If A = 'r' MoveRight
-   66:
-   67:	  0070	EC			MOV A, R4;
-   68:	  0071	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   69:	  0072	94 6C			SUBB A, #'l'	;Compare A to 'l'
-   70:	  0074	60 1B			JZ Jmvleft	;If A = 'l' MoveLeft
-   71:
-   72:	  0076	EC			MOV A, R4;
-   73:	  0077	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   74:	  0078	94 61			SUBB A, #'a'	;Compare A to 'a'
-   75:	  007A	60 21			JZ AutoDriveMode;If A = 'a' then active auto drive
-   76:
-   77:	  007C	EC			MOV A, R4;
-   78:	  007D	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   79:	  007E	94 73			SUBB A, #'s'	;Compare A to 's'
-   80:	  0080	60 14			JZ Jstop	;If A = 's' stop the car
-   81:
+   44:	  0050	C2 97			CLR AutoLED
+   45:	  0052	11 E4			ACALL StopCar
+   46:	  0054	75 A8 80		MOV IE, #10000000B	;enables interrupt
+   47:
+   48:	  0057	30 98 FD	Main:	JNB RI, $	;Waiting for receive interrupt flag
+   49:	  005A	E5 99			MOV A, SBUF	;Move received character to A
+   50:	  005C	C2 98			CLR RI		;Clear receive interrupt flag
+   51:	  005E	FC			MOV R4, A
+   52:
+   53:				;;;;;;;;Switch;;;;;;;;
+   54:	  005F	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   55:	  0060	94 66			SUBB A, #'f'	;Compare A to 'f'
+   56:	  0062	60 1E			JZ Jmvfwd	;If A = 'f' MoveForward
+   57:
+   58:	  0064	EC			MOV A, R4;
+   59:	  0065	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   60:	  0066	94 62			SUBB A, #'b'	;Compare A to 'b'
+   61:	  0068	60 1D			JZ Jmvbwd	;If A = 'b' MoveBackward
+   62:
+   63:	  006A	EC			MOV A, R4;
+   64:	  006B	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   65:	  006C	94 72			SUBB A, #'r'	;Compare A to 'r'
+   66:	  006E	60 1C			JZ Jmvright	;If A = 'r' MoveRight
+   67:
+   68:	  0070	EC			MOV A, R4;
+   69:	  0071	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   70:	  0072	94 6C			SUBB A, #'l'	;Compare A to 'l'
+   71:	  0074	60 1B			JZ Jmvleft	;If A = 'l' MoveLeft
+   72:
+   73:	  0076	EC			MOV A, R4;
+   74:	  0077	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   75:	  0078	94 61			SUBB A, #'a'	;Compare A to 'a'
+   76:	  007A	60 21			JZ AutoDriveMode;If A = 'a' then active auto drive
+   77:
+   78:	  007C	EC			MOV A, R4;
+   79:	  007D	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   80:	  007E	94 73			SUBB A, #'s'	;Compare A to 's'
+   81:	  0080	60 14			JZ Jstop	;If A = 's' stop the car
    82:
-   83:				;;;;;;TRY TO OPTIMIZE;;;;;;
-   84:	  0082	11 C0		Jmvfwd:	ACALL MoveForward
-   85:	  0084	02 00 9B	JMP BckMain
-   86:	  0087	11 C9		Jmvbwd:ACALL MoveBackward
-   87:	  0089	02 00 9B	JMP BckMain
-   88:	  008C	11 D2		Jmvright:ACALL MoveRight
-   89:	  008E	02 00 9B	JMP BckMain
-   90:	  0091	11 DB		Jmvleft:ACALL MoveLeft
-   91:	  0093	02 00 9B	JMP BckMain
-   92:	  0096	11 E4		Jstop:ACALL StopCar
-   93:	  0098	02 00 9B	JMP BckMain
-   94:
-   95:	  009B	80 BA		BckMain:SJMP Main	;Jump back to Main for looping
-   96:				;;;;;;TRY TO OPTIMIZE;;;;;;
-   97:
+   83:
+   84:				;;;;;;TRY TO OPTIMIZE;;;;;;
+   85:	  0082	11 C0		Jmvfwd:	ACALL MoveForward
+   86:	  0084	02 00 9B	JMP BckMain
+   87:	  0087	11 C9		Jmvbwd:ACALL MoveBackward
+   88:	  0089	02 00 9B	JMP BckMain
+   89:	  008C	11 D2		Jmvright:ACALL MoveRight
+   90:	  008E	02 00 9B	JMP BckMain
+   91:	  0091	11 DB		Jmvleft:ACALL MoveLeft
+   92:	  0093	02 00 9B	JMP BckMain
+   93:	  0096	11 E4		Jstop:ACALL StopCar
+   94:	  0098	02 00 9B	JMP BckMain
+   95:
+   96:	  009B	80 BA		BckMain:SJMP Main	;Jump back to Main for looping
+   97:				;;;;;;TRY TO OPTIMIZE;;;;;;
    98:
-   99:				;AutoDriveMode is mode for auto move and detect objects
+   99:
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
 
@@ -131,62 +131,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-  100:	  009D			AutoDriveMode:
-  101:	  009D	75 A8 90		MOV IE, #10010000B	;enables serial interrupt which can be caused by both TI/RI
-  102:	  00A0	D2 97			SETB AutoLED		;Turn on auto drive LED
-  103:
-  104:	  00A2			TrigAgain:
-  105:	  00A2	C3			CLR C
-  106:	  00A3	30 97 AD		JNB AutoLED, NormalMode	;IF autoLed pin is 0 JMP to NormalMode
-  107:
-  108:					;TODO remove or solve it
-  109:	  00A6	C2 95			CLR DetectedPin
-  110:
-  111:	  00A8	D2 A0			SETB TRIG		; starts the trigger pulse
-  112:	  00AA	31 1A			ACALL Delay10M     	; Delay 10uS width for the trigger pulse
-  113:	  00AC	C2 A0			CLR TRIG         	; ends the trigger pulse
-  114:
-  115:	  00AE	30 A1 FD		JNB ECHO,$    		; loops here until echo is received
-  116:
-  117:	  00B1	11 FC			ACALL CalcDistance
-  118:					;TODO when transistor be used
-  119:	  00B3	20 8D 06		JB TF0, NoObj
-  120:	  00B6	11 ED			ACALL Detected
-  121:	  00B8	C2 8D			CLR TF0
-  122:	  00BA	80 E6			SJMP TrigAgain
-  123:
-  124:	  00BC	11 C0		NoObj:	ACALL MoveForward
-  125:	  00BE	80 E2			SJMP TrigAgain		;short jumps to again loop
-  126:
-  127:	  00C0			MoveForward:
-  128:	  00C0	C2 93			CLR RightBackward
-  129:	  00C2	C2 91			CLR LeftBackward
-  130:	  00C4	D2 92			SETB RightForward
-  131:	  00C6	D2 90			SETB LeftForward
-  132:					;ACALL FeedBck
-  133:	  00C8	22			RET
-  134:
-  135:	  00C9			MoveBackward:
-  136:	  00C9	C2 92			CLR RightForward
-  137:	  00CB	C2 90			CLR LeftForward
-  138:	  00CD	D2 93			SETB RightBackward
-  139:	  00CF	D2 91			SETB LeftBackward
-  140:					;ACALL FeedBck
-  141:	  00D1	22			RET
-  142:
-  143:	  00D2			MoveRight:
-  144:	  00D2	C2 93			CLR RightBackward
-  145:	  00D4	C2 91			CLR LeftBackward
-  146:	  00D6	C2 92			CLR RightForward
-  147:	  00D8	D2 90			SETB LeftForward
-  148:					;ACALL FeedBck
-  149:	  00DA	22			RET
-  150:
-  151:	  00DB			MoveLeft:
-  152:	  00DB	C2 92			CLR RightForward
-  153:	  00DD	C2 90			CLR LeftForward
-  154:	  00DF	D2 93			SETB RightBackward
-  155:	  00E1	C2 91			CLR LeftBackward
+  100:				;AutoDriveMode is mode for auto move and detect objects
+  101:	  009D			AutoDriveMode:
+  102:	  009D	75 A8 90		MOV IE, #10010000B	;enables serial interrupt which can be caused by both TI/RI
+  103:	  00A0	D2 97			SETB AutoLED		;Turn on auto drive LED
+  104:
+  105:	  00A2			TrigAgain:
+  106:	  00A2	C3			CLR C
+  107:	  00A3	30 97 AA		JNB AutoLED, NormalMode	;IF autoLed pin is 0 JMP to NormalMode
+  108:
+  109:					;TODO remove or solve it
+  110:	  00A6	C2 95			CLR DetectedPin
+  111:
+  112:	  00A8	D2 A0			SETB TRIG		; starts the trigger pulse
+  113:	  00AA	31 0F			ACALL Delay10M     	; Delay 10uS width for the trigger pulse
+  114:	  00AC	C2 A0			CLR TRIG         	; ends the trigger pulse
+  115:
+  116:	  00AE	30 A1 FD		JNB ECHO,$    		; loops here until echo is received
+  117:
+  118:	  00B1	11 FC			ACALL CalcDistance
+  119:					;TODO when transistor be used
+  120:	  00B3	20 8D 06		JB TF0, NoObj
+  121:	  00B6	11 ED			ACALL Detected
+  122:	  00B8	C2 8D			CLR TF0
+  123:	  00BA	80 E6			SJMP TrigAgain
+  124:
+  125:	  00BC	11 C0		NoObj:	ACALL MoveForward
+  126:	  00BE	80 E2			SJMP TrigAgain		;short jumps to again loop
+  127:
+  128:	  00C0			MoveForward:
+  129:	  00C0	C2 93			CLR RightBackward
+  130:	  00C2	C2 91			CLR LeftBackward
+  131:	  00C4	D2 92			SETB RightForward
+  132:	  00C6	D2 90			SETB LeftForward
+  133:					;ACALL FeedBck
+  134:	  00C8	22			RET
+  135:
+  136:	  00C9			MoveBackward:
+  137:	  00C9	C2 92			CLR RightForward
+  138:	  00CB	C2 90			CLR LeftForward
+  139:	  00CD	D2 93			SETB RightBackward
+  140:	  00CF	D2 91			SETB LeftBackward
+  141:					;ACALL FeedBck
+  142:	  00D1	22			RET
+  143:
+  144:	  00D2			MoveRight:
+  145:	  00D2	C2 93			CLR RightBackward
+  146:	  00D4	C2 91			CLR LeftBackward
+  147:	  00D6	C2 92			CLR RightForward
+  148:	  00D8	D2 90			SETB LeftForward
+  149:					;ACALL FeedBck
+  150:	  00DA	22			RET
+  151:
+  152:	  00DB			MoveLeft:
+  153:	  00DB	D2 92			SETB RightForward
+  154:	  00DD	C2 90			CLR LeftForward
+  155:	  00DF	C2 93			CLR RightBackward
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
 
@@ -194,62 +194,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-  156:					;ACALL FeedBck
-  157:	  00E3	22			RET
-  158:
-  159:	  00E4			StopCar:
-  160:	  00E4	C2 93			CLR RightBackward
-  161:	  00E6	C2 91			CLR LeftBackward
-  162:	  00E8	C2 92			CLR RightForward
-  163:	  00EA	C2 90			CLR LeftForward
-  164:					;ACALL FeedBck
-  165:	  00EC	22			RET
-  166:
-  167:				;If object detected MoveBack for 1 sec then move right for 2 sec
-  168:	  00ED			Detected:
-  169:	  00ED	D2 95			SETB DetectedPin
-  170:	  00EF	11 C9			ACALL MoveBackward
-  171:	  00F1	31 2A			ACALL DelaySec
-  172:	  00F3	11 D2			ACALL MOVERight
-  173:	  00F5	31 2A			ACALL DelaySec
-  174:	  00F7	31 2A			ACALL DelaySec
-  175:	  00F9	C2 95			CLR DetectedPin
-  176:	  00FB	22			RET
-  177:
+  156:	  00E1	C2 91			CLR LeftBackward
+  157:					;ACALL FeedBck
+  158:	  00E3	22			RET
+  159:
+  160:	  00E4			StopCar:
+  161:	  00E4	C2 93			CLR RightBackward
+  162:	  00E6	C2 91			CLR LeftBackward
+  163:	  00E8	C2 92			CLR RightForward
+  164:	  00EA	C2 90			CLR LeftForward
+  165:					;ACALL FeedBck
+  166:	  00EC	22			RET
+  167:
+  168:				;If object detected MoveBack for 1 sec then move right for 2 sec
+  169:	  00ED			Detected:
+  170:	  00ED	D2 95			SETB DetectedPin
+  171:	  00EF	11 C9			ACALL MoveBackward
+  172:	  00F1	31 1F			ACALL DelaySec
+  173:	  00F3	11 D2			ACALL MOVERight
+  174:	  00F5	31 1F			ACALL DelaySec
+  175:	  00F7	31 1F			ACALL DelaySec
+  176:	  00F9	C2 95			CLR DetectedPin
+  177:	  00FB	22			RET
   178:
-  179:	  00FC			CalcDistance:
-  180:					;Loop until ECHO pin is low
-  181:					;Start counting ticks from 44103D => AC47
-  182:					;44103D for maximum distance
-  183:	  00FC	75 8A 47		MOV TL0, #47H
-  184:	  00FF	75 8C AC		MOV TH0, #0ACH
-  185:
-  186:	  0102	C2 8D			CLR TF0
-  187:	  0104	D2 8C			SETB TR0	;start timer 0
-  188:
-  189:					;TODO LOOP while ECHO 1 and TF0 is 0
-  190:	  0106	20 A1 FD		JB ECHO, $	;If ECHO is high loop to echo is 1
-  191:
-  192:					;TODO
-  193:	  0109	20 A1 03		CheckECHO:JB ECHO, CheckOF
-  194:	  010C	02 01 14			JMP d
-  195:	  010F	30 8D F7		CheckOF: JNB TF0, CheckECHO
-  196:						;IF else
-  197:	  0112	31 17				ACALL RestartUS
-  198:	  0114	C2 8C			d:CLR TR0
-  199:
-  200:	  0116	22		RET
-  201:
-  202:				;TODO
-  203:				;restart ultrasonic sensor
-  204:	  0117			RestartUS:
-  205:	  0117	C2 8C		CLR TR0
-  206:	  0119	22		RET
-  207:
+  179:
+  180:	  00FC			CalcDistance:
+  181:					;Loop until ECHO pin is low
+  182:					;Start counting ticks from 44103D => AC47
+  183:					;44103D for maximum distance
+  184:	  00FC	75 8A 47		MOV TL0, #47H
+  185:	  00FF	75 8C AC		MOV TH0, #0ACH
+  186:
+  187:	  0102	C2 8D			CLR TF0
+  188:	  0104	D2 8C			SETB TR0	;start timer 0
+  189:
+  190:					;TODO LOOP while ECHO 1 and TF0 is 0
+  191:	  0106	20 A1 FD		JB ECHO, $	;If ECHO is high loop to echo is 1
+  192:
+  193:					;TODO
+  194:					;CheckECHO:JB ECHO, CheckOF
+  195:					;	JMP d
+  196:					;CheckOF: JNB TF0, CheckECHO
+  197:							;IF else
+  198:						;ACALL RestartUS
+  199:	  0109	C2 8C			d:CLR TR0
+  200:
+  201:	  010B	22		RET
+  202:
+  203:				;TODO
+  204:				;restart ultrasonic sensor
+  205:	  010C			RestartUS:
+  206:	  010C	C2 8C		CLR TR0
+  207:	  010E	22		RET
   208:
-  209:				;Delay 10 micro sec
-  210:	  011A			Delay10M:
-  211:					;MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
+  209:
+  210:				;Delay 10 micro sec
+  211:	  010F			Delay10M:
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 5
 
@@ -257,48 +257,49 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-  212:	  011A	75 8A F7		MOV TL0, #0F7H
-  213:	  011D	75 8C FF		MOV TH0, #0FFH
-  214:
-  215:	  0120	D2 8C			SETB TR0
-  216:
-  217:	  0122	30 8D FD		JNB TF0, $
-  218:	  0125	C2 8C			CLR TR0
-  219:	  0127	C2 8D			CLR TF0
-  220:	  0129	22		RET
-  221:
-  222:	  012A			DelaySec:
-  223:	  012A	C0 07			PUSH 07H
-  224:	  012C	7F 14		    	MOV R7, #20D
-  225:				    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
-  226:					;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
-  227:	  012E				DelaySecLoop:
-  228:	  012E	75 8A 00	    		MOV TL0, #00H
-  229:	  0131	75 8C 4C	    		MOV TH0, #4CH
-  230:	  0134	D2 8C		    		SETB TR0	;Start timer 0
-  231:
-  232:	  0136	30 8D FD	    		JNB TF0, $	;Loop until Timer 0 overflow = 1
-  233:	  0139	C2 8C		    		CLR TR0		;Stop timer 0
-  234:	  013B	C2 8D		    		CLR TF0		;Clear overFlow
-  235:
-  236:	  013D	DF EF		    		DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
-  237:
-  238:	  013F	D0 07		    	POP 07H
-  239:	  0141	22		RET
-  240:
+  212:					;MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
+  213:	  010F	75 8A F7		MOV TL0, #0F7H
+  214:	  0112	75 8C FF		MOV TH0, #0FFH
+  215:
+  216:	  0115	D2 8C			SETB TR0
+  217:
+  218:	  0117	30 8D FD		JNB TF0, $
+  219:	  011A	C2 8C			CLR TR0
+  220:	  011C	C2 8D			CLR TF0
+  221:	  011E	22		RET
+  222:
+  223:	  011F			DelaySec:
+  224:	  011F	C0 07			PUSH 07H
+  225:	  0121	7F 14		    	MOV R7, #20D
+  226:				    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
+  227:					;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
+  228:	  0123				DelaySecLoop:
+  229:	  0123	75 8A 00	    		MOV TL0, #00H
+  230:	  0126	75 8C 4C	    		MOV TH0, #4CH
+  231:	  0129	D2 8C		    		SETB TR0	;Start timer 0
+  232:
+  233:	  012B	30 8D FD	    		JNB TF0, $	;Loop until Timer 0 overflow = 1
+  234:	  012E	C2 8C		    		CLR TR0		;Stop timer 0
+  235:	  0130	C2 8D		    		CLR TF0		;Clear overFlow
+  236:
+  237:	  0132	DF EF		    		DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
+  238:
+  239:	  0134	D0 07		    	POP 07H
+  240:	  0136	22		RET
   241:
-  242:	  0142			SERIALINT:
-  243:	  0142	20 99 05		JB TI, TRANS; if the interrupt is caused by T1 control is transferred to trans as the old da
+  242:
+  243:	  0137			SERIALINT:
+  244:	  0137	20 99 05		JB TI, TRANS; if the interrupt is caused by T1 control is transferred to trans as the old da
 				ta has been transferred and new data can be sent to the SBUF
-  244:	  0145	C2 97			CLR AutoLED
-  245:	  0147	C2 98		        CLR RI; clears RI flag
-  246:	  0149	32		        RETI; transfers control to main
-  247:
-  248:	  014A	32		TRANS:	RETI;  transfers control to main
-  249:
-  250:				END
-  251:
+  245:	  013A	C2 97			CLR AutoLED
+  246:	  013C	C2 98		        CLR RI; clears RI flag
+  247:	  013E	32		        RETI; transfers control to main
+  248:
+  249:	  013F	32		TRANS:	RETI;  transfers control to main
+  250:
+  251:				END
   252:
+  253:
 
 
 
@@ -327,19 +328,17 @@ SYMBOL				  TYPE     VALUE	LINE
 ??VERSION			  NUMBER    0130
 AC				  BIT	      D6
 ACC				  DATA	      E0
-AUTODRIVEMODE			  CODE	    009D	 100
+AUTODRIVEMODE			  CODE	    009D	 101
 AUTOLED				  NUMBER    0097	  18
 B				  DATA	      F0
-BCKMAIN				  CODE	    009B	  95
-CALCDISTANCE			  CODE	    00FC	 179
-CHECKECHO			  CODE	    0109	 193
-CHECKOF				  CODE	    010F	 195
+BCKMAIN				  CODE	    009B	  96
+CALCDISTANCE			  CODE	    00FC	 180
 CY				  BIT	      D7
-D				  CODE	    0114	 198
-DELAY10M			  CODE	    011A	 210
-DELAYSEC			  CODE	    012A	 222
-DELAYSECLOOP			  CODE	    012E	 227
-DETECTED			  CODE	    00ED	 168
+D				  CODE	    0109	 199
+DELAY10M			  CODE	    010F	 211
+DELAYSEC			  CODE	    011F	 223
+DELAYSECLOOP			  CODE	    0123	 228
+DETECTED			  CODE	    00ED	 169
 DETECTEDPIN			  NUMBER    0095	  20
 DPH				  DATA	      83
 DPL				  DATA	      82
@@ -361,18 +360,20 @@ INT1				  BIT	      B3
 IP				  DATA	      B8
 IT0				  BIT	      88
 IT1				  BIT	      8A
-JMVBWD				  CODE	    0087	  86
-JMVFWD				  CODE	    0082	  84
-JMVLEFT				  CODE	    0091	  90
-JMVRIGHT			  CODE	    008C	  88
-JSTOP				  CODE	    0096	  92
+JMVBWD				  CODE	    0087	  87
+JMVFWD				  CODE	    0082	  85
+JMVLEFT				  CODE	    0091	  91
+JMVRIGHT			  CODE	    008C	  89
+JSTOP				  CODE	    0096	  93
 LEFTBACKWARD			  NUMBER    0091	  13
 LEFTFORWARD			  NUMBER    0090	  12
-MAIN				  CODE	    0057	  47
-MOVEBACKWARD			  CODE	    00C9	 135
-MOVEFORWARD			  CODE	    00C0	 127
-MOVELEFT			  CODE	    00DB	 151
-MOVERIGHT			  CODE	    00D2	 143
+MAIN				  CODE	    0057	  48
+MOVEBACKWARD			  CODE	    00C9	 136
+MOVEFORWARD			  CODE	    00C0	 128
+MOVELEFT			  CODE	    00DB	 152
+MOVERIGHT			  CODE	    00D2	 144
+NOOBJ				  CODE	    00BC	 125
+NORMALMODE			  CODE	    0050	  42
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 7
 
@@ -380,8 +381,6 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
 SYMBOL				  TYPE     VALUE	LINE
 ------------------------------------------------------------
-NOOBJ				  CODE	    00BC	 124
-NORMALMODE			  CODE	    0053	  42
 ONLED				  NUMBER    0096	  19
 OV				  BIT	      D2
 P				  BIT	      D0
@@ -400,7 +399,7 @@ RB8				  BIT	      9A
 RD				  BIT	      B7
 REN				  BIT	      9C
 RESET				  CODE	    0000
-RESTARTUS			  CODE	    0117	 204
+RESTARTUS			  CODE	    010C	 205
 RI				  BIT	      98
 RIGHTBACKWARD			  NUMBER    0093	  15
 RIGHTFORWARD			  NUMBER    0092	  14
@@ -409,14 +408,14 @@ RS1				  BIT	      D4
 RXD				  BIT	      B0
 SBUF				  DATA	      99
 SCON				  DATA	      98
-SERIALINT			  CODE	    0142	 242
+SERIALINT			  CODE	    0137	 243
 SINT				  CODE	    0023
 SM0				  BIT	      9F
 SM1				  BIT	      9E
 SM2				  BIT	      9D
 SP				  DATA	      81
 START				  CODE	    0030	  10
-STOPCAR				  CODE	    00E4	 159
+STOPCAR				  CODE	    00E4	 160
 T0				  BIT	      B4
 T1				  BIT	      B5
 TB8				  BIT	      9B
@@ -433,15 +432,8 @@ TL1				  DATA	      8B
 TMOD				  DATA	      89
 TR0				  BIT	      8C
 TR1				  BIT	      8E
-TRANS				  CODE	    014A	 248
+TRANS				  CODE	    013F	 249
 TRIG				  NUMBER    00A0	  24
-TRIGAGAIN			  CODE	    00A2	 104
-
-ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 8
-
-
-
-SYMBOL				  TYPE     VALUE	LINE
-------------------------------------------------------------
+TRIGAGAIN			  CODE	    00A2	 105
 TXD				  BIT	      B1
 WR				  BIT	      B6

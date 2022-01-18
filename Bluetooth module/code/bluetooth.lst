@@ -22,47 +22,48 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
     2:		N      0000	ORG 0
     3:		B      00A0	LED EQU P2.0
     4:	  0000	C2 A0		CLR LED
-    5:
-    6:	  0002	75 89 20	MOV TMOD, #00100000B	;Mode 2 for timer 1 (8 bit auto reload)
-    7:	  0005	75 8D FD	MOV TH1, #0FDH		;setting baud rate 9600
-    8:	  0008	75 98 50	MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
-    9:
-   10:	  000B	D2 8E		SETB TR1	;Run timer 1
-   11:	  000D	30 98 FD	Receive:JNB RI, $	;Waiting for receive interrupt flag
-   12:	  0010	E5 99			MOV A, SBUF	;Move received character to A
-   13:	  0012	C2 98			CLR RI		;Clear receive interrupt flag
-   14:	  0014	FC			MOV R4, A
-   15:	  0015	C3			Switch:	CLR C		;Clear carry flag befor using SUBB for comparing
-   16:	  0016	94 31				SUBB A, #'1'	;Compare A to 1
-   17:	  0018	60 08				JZ LEDON	;If A = 1 turn on LED
-   18:
-   19:	  001A	EC				MOV A, R4;
-   20:	  001B	C3				CLR C		;Clear carry flag befor using SUBB for comparing
-   21:	  001C	94 30				SUBB A, #'0'	;Compare A to 0
-   22:	  001E	60 07				JZ LEDOFF	;If A = 0 turn off LED
-   23:
-   24:	  0020	80 EB				SJMP Receive	;Jump back to Receive
-   25:
-   26:	  0022	D2 A0		LEDON:	SETB LED
-   27:	  0024	02 00 2C		JMP FeedBck
-   28:
-   29:	  0027	C2 A0		LEDOFF:	CLR LED
-   30:	  0029	02 00 2C		JMP FeedBck
-   31:
-   32:	  002C	8C 99		FeedBck:MOV SBUF, R4
-   33:	  002E	30 99 FD		JNB TI, $
-   34:	  0031	C2 99			CLR TI
-   35:	  0033	80 D8			SJMP Receive	;Jump back to Receive
-   36:
+    5:	  0002	75 90 00	MOV P1, #0
+    6:	  0005	D2 90		SETB P1.0
+    7:	  0007	75 89 20	MOV TMOD, #00100000B	;Mode 2 for timer 1 (8 bit auto reload)
+    8:	  000A	75 8D FD	MOV TH1, #0FDH		;setting baud rate 9600
+    9:	  000D	75 98 50	MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
+   10:
+   11:	  0010	D2 8E		SETB TR1	;Run timer 1
+   12:	  0012	30 98 FD	Receive:JNB RI, $	;Waiting for receive interrupt flag
+   13:	  0015	E5 99			MOV A, SBUF	;Move received character to A
+   14:	  0017	C2 98			CLR RI		;Clear receive interrupt flag
+   15:	  0019	FC			MOV R4, A
+   16:	  001A	C3			Switch:	CLR C		;Clear carry flag befor using SUBB for comparing
+   17:	  001B	94 31				SUBB A, #'1'	;Compare A to 1
+   18:	  001D	60 08				JZ LEDON	;If A = 1 turn on LED
+   19:
+   20:	  001F	EC				MOV A, R4;
+   21:	  0020	C3				CLR C		;Clear carry flag befor using SUBB for comparing
+   22:	  0021	94 30				SUBB A, #'0'	;Compare A to 0
+   23:	  0023	60 07				JZ LEDOFF	;If A = 0 turn off LED
+   24:
+   25:	  0025	80 EB				SJMP Receive	;Jump back to Receive
+   26:
+   27:	  0027	D2 A0		LEDON:	SETB LED
+   28:	  0029	02 00 31		JMP FeedBck
+   29:
+   30:	  002C	C2 A0		LEDOFF:	CLR LED
+   31:	  002E	02 00 31		JMP FeedBck
+   32:
+   33:	  0031	8C 99		FeedBck:MOV SBUF, R4
+   34:	  0033	30 99 FD		JNB TI, $
+   35:	  0036	C2 99			CLR TI
+   36:	  0038	80 D8			SJMP Receive	;Jump back to Receive
    37:
    38:
    39:
-   40:				END
-
+   40:
+   41:				END
 
 
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
+
 
 
 
@@ -104,7 +105,7 @@ EX1				  BIT	      AA
 EXTI0				  CODE	    0003
 EXTI1				  CODE	    0013
 F0				  BIT	      D5
-FEEDBCK				  CODE	    002C	  32
+FEEDBCK				  CODE	    0031	  33
 IE				  DATA	      A8
 IE0				  BIT	      89
 IE1				  BIT	      8B
@@ -114,8 +115,8 @@ IP				  DATA	      B8
 IT0				  BIT	      88
 IT1				  BIT	      8A
 LED				  NUMBER    00A0	   3
-LEDOFF				  CODE	    0027	  29
-LEDON				  CODE	    0022	  26
+LEDOFF				  CODE	    002C	  30
+LEDON				  CODE	    0027	  27
 OV				  BIT	      D2
 P				  BIT	      D0
 P0				  DATA	      80
@@ -131,7 +132,7 @@ PX0				  BIT	      B8
 PX1				  BIT	      BA
 RB8				  BIT	      9A
 RD				  BIT	      B7
-RECEIVE				  CODE	    000D	  11
+RECEIVE				  CODE	    0012	  12
 REN				  BIT	      9C
 RESET				  CODE	    0000
 RI				  BIT	      98
@@ -152,7 +153,7 @@ SM0				  BIT	      9F
 SM1				  BIT	      9E
 SM2				  BIT	      9D
 SP				  DATA	      81
-SWITCH				  CODE	    0015	  15
+SWITCH				  CODE	    001A	  16
 T0				  BIT	      B4
 T1				  BIT	      B5
 TB8				  BIT	      9B

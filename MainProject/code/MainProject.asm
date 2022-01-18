@@ -37,12 +37,13 @@ MOV TMOD, #00100001B	;Mode 2 for timer 1 (8 bit auto reload)
 MOV TH1, #0FDH		;setting baud rate 9600
 MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
 SETB TR1		;Run timer 1
-MOV IE, #10000000B	;enables interrupt
+;MOV IE, #10000000B	;enables interrupt
 
 NormalMode:
 	;The following to instruction to reset when returning from AutoDriveMode 
 	CLR AutoLED
 	ACALL StopCar
+	MOV IE, #10000000B	;enables interrupt
 	
 Main:	JNB RI, $	;Waiting for receive interrupt flag
 	MOV A, SBUF	;Move received character to A
@@ -149,9 +150,9 @@ MoveRight:
 	RET
 	
 MoveLeft:
-	CLR RightForward	
+	SETB RightForward	
 	CLR LeftForward
-	SETB RightBackward
+	CLR RightBackward
 	CLR LeftBackward
 	;ACALL FeedBck
 	RET

@@ -2,20 +2,34 @@
 ;R6 is used in printing, storing ECHO times to be printed
 ;R7 is used in all Delays, as counter in DLOOP
 ORG 0
-MOV P1,#00000000B      ; sets P1 as output port
-MOV P0,#00000000B      ; sets P0 as output port
 
-TRIG EQU P2.0
+
+TRIG EQU P2.3
 CLR TRIG               ; sets TRIG as output for sending trigger
 
-ECHO EQU P2.1
+ECHO EQU P2.4
 SETB ECHO              ; sets ECHO as input for receiving echo
 
-USGROUND EQU P2.2
+USGROUND EQU P0.2
 SETB USGROUND
 
-MOV A, #0H
 
+RS BIT P2.0
+RW BIT P2.1
+EN  BIT P2.2
+DATABUS EQU P1
+LCD_F BIT P1.7
+
+;LCD INITIALIZATION
+		MOV A, #38H	; INITIATE LCD
+		ACALL COMMANDWRT
+
+		MOV A, #0FH	; DISPLAY ON CURSOR ON
+		ACALL COMMANDWRT
+		
+		MOV A, #01H	; CLEAR LCD
+		ACALL COMMANDWRT
+MOV A, #0H
 MAIN:   ;TRIG CODE
 	SETB TRIG		; starts the trigger pulse
 	ACALL Delay10M     	; Delay 10uS width for the trigger pulse
@@ -28,7 +42,9 @@ MAIN:   ;TRIG CODE
 	SJMP MAIN        ;short jumps to MAIN loop
 	
 ;Display LOOP for send char to serial port for printing it on virtual terminal
-DLOOP:	MOV TMOD, #20H	; or 00100000B => Mode 2 for Timer 1 (8bit Auto Reload)
+DLOOP:	MOV A, #01H	; CLEAR LCD
+	ACALL COMMANDWRT
+	MOV TMOD, #20H	; or 00100000B => Mode 2 for Timer 1 (8bit Auto Reload)
 	MOV TH1, #0FDH	;Setting BaudRate of 9600 (-3). SMOD is 0 by default
 	MOV SCON, #50H	;Serial Mode 1, REN Enabled or #01010000B
 	SETB TR1
@@ -46,12 +62,20 @@ DLOOP:	MOV TMOD, #20H	; or 00100000B => Mode 2 for Timer 1 (8bit Auto Reload)
 	print:	POP 05H			;POP to 05H which is R5
 		MOV A, R5
 		ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
+		MOV R1, A;TODO REMOVE
+		;PRINTING A CHARACTER
+		CALL SENDCHAR
+		MOV A, R1;TODO remove
 		MOV SBUF, A
 		JNB TI, $
 		CLR TI
 		;ACALL DelaySec		;TODO i think it is not useful
 		DJNZ R7, print		;decrements the byte indicated by the first operand and, if the resulting value is not zero, branches to the address specified in the second operand.
 		MOV A, #' '
+		MOV R1, A;TODO REMOVE
+		;PRINTING A CHARACTER
+		CALL SENDCHAR
+		MOV A, R1;TODO remove
 		MOV SBUF, A
 		JNB TI, $
 		CLR TI
@@ -62,6 +86,9 @@ CalcDistance:
 	;Loop until ECHO pin is low
 	MOV TMOD, #00000001B	;set timer0 as mode 1 16-bit 
 	;Start counting ticks from 44103D => AC47
+	;MOV TL0, #0EFH
+	;MOV TH0, #14H
+	
 	MOV TL0, #47H
 	MOV TH0, #0ACH
 
@@ -72,7 +99,7 @@ CalcDistance:
 	;CLR TR0
 
 	checkecho:JB ECHO, checkof
-	JMP clear
+		JMP clear
 	checkof:JB TF0, restart
 		JMP checkecho
 		
@@ -84,11 +111,29 @@ restart:CLR P2.2
 	clear:CLR TR0
 	
 	;Move TH0 to R6 to be printed
-	MOV R6, TH0
-	ACALL DLOOP
+	;MOV R6, TH0
+	;ACALL DLOOP
 	
 	;Move TL0 to R6 to be printed	
-	MOV R6, TL0
+	;MOV R6, TL0
+	;ACALL DLOOP
+	
+	CLR C
+	MOV A, TH0
+	SUBB A, #0ACH
+	MOV R1, A;for division
+	
+	CLR C
+	MOV A, TL0
+	SUBB A, #47H
+	MOV R0, A
+	
+	MOV R3, #0
+	MOV R2, #58D
+	
+	ACALL DIV_16
+	MOV A, R2
+	MOV R6, A
 	ACALL DLOOP
 RET
 	
@@ -137,134 +182,103 @@ Delay1000M:
 	CLR TR0
 	CLR TF0
 RET 
+		
+		
+;SENDING A CHARACHTER SUBROUTINE
+SENDCHAR:
+	ACALL DATAWRT
+	ACALL DELAY
+	RET		
 
+;COMMAND SUB-ROUTINE FOR LCD CONTROL
+COMMANDWRT:
 
+    	MOV P1, A ;SEND DATA TO P1
+	CLR RS	;RS=0 FOR COMMAND
+	CLR RW	;R/W=0 FOR WRITE
+	SETB EN	;E=1 FOR HIGH PULSE
+	ACALL DELAY
+	CLR EN	;E=0 FOR H-L PULSE
+	
+	RET
 
+;SUBROUTINE FOR DATA LACTCHING TO LCD
+DATAWRT:
 
+	MOV DATABUS, A
+    	SETB RS	;RS=1 FOR DATA
+    	CLR RW
+    	SETB EN
+    	ACALL DELAY
+	CLR EN
 
+	RET
 
+	
 
+;DELAY SUBROUTINE
+DELAY:
+    	MOV R0, #10 ;DELAY. HIGHER VALUE FOR FASTER CPUS
+Y:	MOV R1, #255
+	DJNZ R1, $
+	DJNZ R0, Y
 
+	RET
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-;Subroutine UDIV32
-;32-Bit / 16-Bit to 32-Bit Quotient & Remainder Unsigned Divide
-;input: r3, r2, rl, r0 = Dividend X
-;D, r4 = Divisor Y
-;output: r3, r2, rl1, r0 = quotient Q of division Q = X/ Y
-;r7, r6, r5, rd = remainder
-;alters: acC, Tlags
-UDIV32: push 08 ;Save Register Bank 1
-	push 09
-	push 0AH
-	push 0BH
-	push 0CH
-	push 0DH
-	push 0EH
-	push 0FH
-	push dpl
-	push dph
-	push B
-	setb RS0 ;Select Register Bank 1
-	mov r7, #0 ;clear partial remainder
-	mov r6, #0
-	mov r5, #0
-	mov r4, #0
-	mov B, #32 ;Set loop coutt
-div_lp32: clr RS0 ;Select Register Bank
-	clr C ;clear carry flag
-	mov a, r0 ;shift the highest bit of the
-	rlc a ;dividend into...
-	mov r0, a
-	mov a, r1
-	rlc a
-	mov r1, a
-	mov a, r2
-	rlc a
-	mov r2, a
-	mov a, r3
-	rlc a
-	mov r3,a
-	setb RS0 ;Select Register Bank 1
-	mov a, r4;...the lowest bit of the
-	rlc a; partial remainder
-	mov r4, a
-	mov a, r5
-	rlc a
-	mov r5, a
-	mov a, r6
-	rlc a
-	mov r6, a
-	mov a, r7
-	rlc a
-	mov r7, a
-	mov a, r4;trial subt ract divisor from
-	clr C;partial remainder
-	subb a, 04
-	mov dpl, a
-	mov a, r5
-	subb a, 05
-	mov dph, a
-	mov a, r6
-	subb a, #0
-	mov 06, a
-	mov a, r7
-	subb a, #0
-	mov 07, a
-	cpl C;Complement external borrow
-	jnc div_321;update partial remainder if borrow
-	mov r7, 07;update partial remainder
-	mov r6, 06
-	mov r5, dph
-	mov r4, dpl
-div_321: mov a, r0;shift result bit into partial
-	rlc a;quotient
-	mov r0, a
-	mov a, r1
-	rlc a
-	mov r1, a
-	mov a, r2
-	rlc a
-	mov r2, a
-	mov a, r3
-	rlc a	
-	mov r3,a
-	djnz B, div_lp32
-	mov 07, r7;put remainder, saved before the
-	mov 06,r6;last subt raction, in bank 0
-	mov 05, r5
-	mov 04, r4
-	mov 03, r3;put quotient in bank 0
-	mov 02, r2
-	mov 01, r1
-	mov 00, r0
-	clr RS0
-	pop B
-	pop dph
-	pop dpl
-	pop 0FH;Retrieve Register Bank 1
-	pop 0EH
-	pop 0DH
-	pop 0CH
-	pop 0BH
-	pop 0AH
-	pop 09
-	pop 08
-ret
-
-
+;16bit division
+; R1 R0
+; / R3 R2
+; = R3 R2
+; shift left the divisor such that the number of digits
+; in the divisor is the same as the number of digits in the dividend
+; shift right the divisor and substract this shifted divisor from the dividend
+; repeat the process again until the divisor has shifted into its original position	
+DIV_16:		
+	CLR C 	;Clear carry initially
+	MOV R4,#00h	;Clear R4 working variable initially
+	MOV R5,#00h	;CLear R5 working variable initially
+	MOV B,#00h 	;Clear B since B will count the number of left-shifted bits
+lshift:		
+	INC B 	;Increment counter for each left shift
+	MOV A,R2 	;Move the current divisor low byte into the accumulator
+	RLC A 	;Shift low-byte left, rotate through carry to apply highest bit to high-byte
+	MOV R2,A 	;Save the updated divisor low-byte
+	MOV A,R3 	;Move the current divisor high byte into the accumulator
+	RLC A 	;Shift high-byte left high, rotating in carry from low-byte
+	MOV R3,A 	;Save the updated divisor high-byte
+	JNC lshift 	;Repeat until carry flag is set from high-byte
+rshift: 		;Shift right the divisor
+	MOV A,R3 	;Move high-byte of divisor into accumulator
+	RRC A 	;Rotate high-byte of divisor right and into carry
+	MOV R3,A 	;Save updated value of high-byte of divisor
+	MOV A,R2 	;Move low-byte of divisor into accumulator
+	RRC A 	;Rotate low-byte of divisor right, with carry from high-byte
+	MOV R2,A 	;Save updated value of low-byte of divisor
+	CLR C 	;Clear carry, we don't need it anymore
+	MOV 07h,R1 	;Make a safe copy of the dividend high-byte
+	MOV 06h,R0 	;Make a safe copy of the dividend low-byte
+	MOV A,R0 	;Move low-byte of dividend into accumulator
+	SUBB A,R2 	;Dividend - shifted divisor = result bit (no factor, only 0 or 1)
+	MOV R0,A 	;Save updated dividend
+	MOV A,R1 	;Move high-byte of dividend into accumulator
+	SUBB A,R3 	;Subtract high-byte of divisor (all together 16-bit substraction)
+	MOV R1,A 	;Save updated high-byte back in high-byte of divisor
+	JNC result 	;If carry flag is NOT set, result is 1
+	MOV R1,07h 	;Otherwise result is 0, save copy of divisor to undo subtraction
+	MOV R0,06h	
+result:		
+	CPL C 	;Invert carry, so it can be directly copied into result
+	MOV A,R4	
+	RLC A 	;Shift carry flag into temporary result
+	MOV R4,A 	
+	MOV A,R5	
+	RLC A	
+	MOV R5,A 	
+	DJNZ B,rshift 	;Now count backwards and repeat until "B" is zero
+	MOV R3,05h 	;Move result to R3/R2
+	MOV R2,04h 	;Move result to R3/R2
+	RET	
+	
 
 close:
 	END
