@@ -22,45 +22,45 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
     2:	  0000	02 00 30	LJMP START; LJMP used to bypass the ISR
     3:
     4:		N      0023	ORG 0023H; location for ISR for both TI and RI
-    5:	  0023	02 01 5A	LJMP SERIALINT
+    5:	  0023	02 01 D7	LJMP SERIALINT
     6:
     7:				;R4 store received character
     8:				;R3 for storing value of TH from ultrasonic echo
     9:		N      0030	ORG 30H
    10:	  0030			START:
-   11:	  0030	75 80 00	MOV P0, #0
-   12:		B      0090	LeftForward EQU P1.0
-   13:		B      0091	LeftBackward EQU P1.1
-   14:		B      0092	RightForward EQU P1.2
-   15:		B      0093	RightBackward EQU P1.3
-   16:	  0033	C2 94		CLR P1.4
+   11:				;MOV P0, #0
+   12:		B      0083	LeftForward EQU P0.3
+   13:		B      0082	LeftBackward EQU P0.2
+   14:		B      0081	RightForward EQU P0.1
+   15:		B      0080	RightBackward EQU P0.0
+   16:				;CLR P1.4
    17:
-   18:		B      0097	AutoLED EQU P1.7	;LED indicate if Auto mode is on or not
-   19:		B      0096	OnLED EQU P1.6
-   20:		B      0095	DetectedPin EQU P1.5
-   21:	  0035	C2 95		CLR DetectedPin
-   22:	  0037	D2 96		SETB OnLED
+   18:		B      00A5	AutoLED EQU P2.5	;LED indicate if Auto mode is on or not
+   19:		B      00A7	OnLED EQU P2.7
+   20:		B      00A6	DetectedPin EQU P2.6
+   21:	  0030	C2 A6		CLR DetectedPin
+   22:	  0032	C2 A7		CLR OnLED
    23:
-   24:		B      00A0	TRIG EQU P2.0
-   25:		B      00A1	ECHO EQU P2.1
+   24:		B      00A3	TRIG EQU P2.3
+   25:		B      00A4	ECHO EQU P2.4
    26:
-   27:	  0039	C2 A0		CLR TRIG		; sets P2.0(TRIG) as output for sending trigger
-   28:	  003B	D2 A1		SETB ECHO		; sets P2.1(ECHO) as input for receiving echo
+   27:	  0034	C2 A3		CLR TRIG		; sets P2.0(TRIG) as output for sending trigger
+   28:	  0036	D2 A4		SETB ECHO		; sets P2.1(ECHO) as input for receiving echo
    29:
-   30:	  003D	C2 90		CLR LeftForward		; sets P1.0(LeftForward) as output
-   31:	  003F	C2 91		CLR LeftBackward	; sets P1.1(LeftBackward) as output
-   32:	  0041	C2 92		CLR RightForward	; sets P1.2(RightForward) as output
-   33:	  0043	C2 93		CLR RightBackward	; sets P1.3(RightBackward) as output
+   30:	  0038	C2 83		CLR LeftForward		; sets P1.0(LeftForward) as output
+   31:	  003A	C2 82		CLR LeftBackward	; sets P1.1(LeftBackward) as output
+   32:	  003C	C2 81		CLR RightForward	; sets P1.2(RightForward) as output
+   33:	  003E	C2 80		CLR RightBackward	; sets P1.3(RightBackward) as output
    34:
-   35:				;Setup serial port and timer 1 for bluetooth
-   36:	  0045	75 89 21	MOV TMOD, #00100001B	;Mode 2 for timer 1 (8 bit auto reload)
-   37:	  0048	75 8D FD	MOV TH1, #0FDH		;setting baud rate 9600
-   38:	  004B	75 98 50	MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
-   39:	  004E	D2 8E		SETB TR1		;Run timer 1
-   40:				;MOV IE, #10000000B	;enables interrupt
-   41:
-   42:	  0050			NormalMode:
-   43:					;The following to instruction to reset when returning from AutoDriveMode
+   35:		B	 A0	RS BIT P2.0
+   36:		B	 A1	RW BIT P2.1
+   37:		B	 A2	EN  BIT P2.2
+   38:		D      0090	DATABUS EQU P1
+   39:		B	 97	LCD_F BIT P1.7
+   40:
+   41:				;LCD INITIALIZATION
+   42:	  0040	74 38				MOV A, #38H	; INITIATE LCD
+   43:	  0042	31 7C				ACALL COMMANDWRT
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 2
 
@@ -68,62 +68,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-   44:	  0050	C2 97			CLR AutoLED
-   45:	  0052	11 DB			ACALL StopCar
-   46:	  0054	75 A8 80		MOV IE, #10000000B	;enables interrupt
+   44:
+   45:	  0044	74 0F				MOV A, #0FH	; DISPLAY ON CURSOR ON
+   46:	  0046	31 7C				ACALL COMMANDWRT
    47:
-   48:	  0057	30 98 FD	Main:	JNB RI, $	;Waiting for receive interrupt flag
-   49:	  005A	E5 99			MOV A, SBUF	;Move received character to A
-   50:	  005C	C2 98			CLR RI		;Clear receive interrupt flag
-   51:	  005E	FC			MOV R4, A
+   48:	  0048	74 01				MOV A, #01H	; CLEAR LCD
+   49:	  004A	31 7C				ACALL COMMANDWRT
+   50:
+   51:
    52:
-   53:				;;;;;;;;Switch;;;;;;;;
-   54:	  005F	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   55:	  0060	94 66			SUBB A, #'f'	;Compare A to 'f'
-   56:	  0062	60 1E			JZ Jmvfwd	;If A = 'f' MoveForward
-   57:
-   58:	  0064	EC			MOV A, R4;
-   59:	  0065	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   60:	  0066	94 62			SUBB A, #'b'	;Compare A to 'b'
-   61:	  0068	60 1D			JZ Jmvbwd	;If A = 'b' MoveBackward
-   62:
-   63:	  006A	EC			MOV A, R4;
-   64:	  006B	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   65:	  006C	94 72			SUBB A, #'r'	;Compare A to 'r'
-   66:	  006E	60 1C			JZ Jmvright	;If A = 'r' MoveRight
-   67:
-   68:	  0070	EC			MOV A, R4;
-   69:	  0071	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   70:	  0072	94 6C			SUBB A, #'l'	;Compare A to 'l'
-   71:	  0074	60 1B			JZ Jmvleft	;If A = 'l' MoveLeft
-   72:
-   73:	  0076	EC			MOV A, R4;
-   74:	  0077	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   75:	  0078	94 61			SUBB A, #'a'	;Compare A to 'a'
-   76:	  007A	60 21			JZ AutoDriveMode;If A = 'a' then active auto drive
-   77:
-   78:	  007C	EC			MOV A, R4;
-   79:	  007D	C3			CLR C		;Clear carry flag befor using SUBB for comparing
-   80:	  007E	94 73			SUBB A, #'s'	;Compare A to 's'
-   81:	  0080	60 14			JZ Jstop	;If A = 's' stop the car
-   82:
-   83:
-   84:				;;;;;;TRY TO OPTIMIZE;;;;;;
-   85:	  0082	11 B7		Jmvfwd:	ACALL MoveForward
-   86:	  0084	02 00 9B	JMP BckMain
-   87:	  0087	11 C0		Jmvbwd:ACALL MoveBackward
-   88:	  0089	02 00 9B	JMP BckMain
-   89:	  008C	11 C9		Jmvright:ACALL MoveRight
-   90:	  008E	02 00 9B	JMP BckMain
-   91:	  0091	11 D2		Jmvleft:ACALL MoveLeft
-   92:	  0093	02 00 9B	JMP BckMain
-   93:	  0096	11 DB		Jstop:ACALL StopCar
-   94:	  0098	02 00 9B	JMP BckMain
-   95:
-   96:	  009B			BckMain:;SETB TRIG		; starts the trigger pulse
-   97:					;ACALL Delay10M     	; Delay 10uS width for the trigger pulse
-   98:					;CLR TRIG         	; ends the trigger pulse
-   99:
+   53:				;Setup serial port and timer 1 for bluetooth
+   54:	  004C	75 89 21	MOV TMOD, #00100001B	;Mode 2 for timer 1 (8 bit auto reload)
+   55:	  004F	75 8D FD	MOV TH1, #0FDH		;setting baud rate 9600
+   56:	  0052	75 98 50	MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
+   57:	  0055	D2 8E		SETB TR1		;Run timer 1
+   58:				;MOV IE, #10000000B	;enables interrupt
+   59:
+   60:	  0057	D2 A7		SETB OnLED
+   61:	  0059			NormalMode:
+   62:					;The following to instruction to reset when returning from AutoDriveMode
+   63:	  0059	C2 A5			CLR AutoLED
+   64:	  005B	11 E4			ACALL StopCar
+   65:	  005D	75 A8 80		MOV IE, #10000000B	;enables interrupt
+   66:
+   67:	  0060	30 98 FD	Main:	JNB RI, $	;Waiting for receive interrupt flag
+   68:	  0063	E5 99			MOV A, SBUF	;Move received character to A
+   69:	  0065	C2 98			CLR RI		;Clear receive interrupt flag
+   70:	  0067	FC			MOV R4, A
+   71:
+   72:				;;;;;;;;Switch;;;;;;;;
+   73:	  0068	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   74:	  0069	94 66			SUBB A, #'f'	;Compare A to 'f'
+   75:	  006B	60 1E			JZ Jmvfwd	;If A = 'f' MoveForward
+   76:
+   77:	  006D	EC			MOV A, R4;
+   78:	  006E	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   79:	  006F	94 62			SUBB A, #'b'	;Compare A to 'b'
+   80:	  0071	60 1D			JZ Jmvbwd	;If A = 'b' MoveBackward
+   81:
+   82:	  0073	EC			MOV A, R4;
+   83:	  0074	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   84:	  0075	94 72			SUBB A, #'r'	;Compare A to 'r'
+   85:	  0077	60 1C			JZ Jmvright	;If A = 'r' MoveRight
+   86:
+   87:	  0079	EC			MOV A, R4;
+   88:	  007A	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   89:	  007B	94 6C			SUBB A, #'l'	;Compare A to 'l'
+   90:	  007D	60 1B			JZ Jmvleft	;If A = 'l' MoveLeft
+   91:
+   92:	  007F	EC			MOV A, R4;
+   93:	  0080	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   94:	  0081	94 61			SUBB A, #'a'	;Compare A to 'a'
+   95:	  0083	60 21			JZ AutoDriveMode;If A = 'a' then active auto drive
+   96:
+   97:	  0085	EC			MOV A, R4;
+   98:	  0086	C3			CLR C		;Clear carry flag befor using SUBB for comparing
+   99:	  0087	94 73			SUBB A, #'s'	;Compare A to 's'
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 3
 
@@ -131,62 +131,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-  100:					;JNB ECHO,$    		; loops here until echo is received
+  100:	  0089	60 14			JZ Jstop	;If A = 's' stop the car
   101:
-  102:					;ACALL CalcDistance
-  103:	  009B	80 BA			SJMP Main	;Jump back to Main for looping
-  104:				;;;;;;TRY TO OPTIMIZE;;;;;;
-  105:
-  106:
-  107:				;AutoDriveMode is mode for auto move and detect objects
-  108:	  009D			AutoDriveMode:
-  109:	  009D	75 A8 90		MOV IE, #10010000B	;enables serial interrupt which can be caused by both TI/RI
-  110:	  00A0	D2 97			SETB AutoLED		;Turn on auto drive LED
-  111:
-  112:	  00A2			TrigAgain:
-  113:	  00A2	C3			CLR C
-  114:	  00A3	30 97 AA		JNB AutoLED, NormalMode	;IF autoLed pin is 0 JMP to NormalMode
-  115:
-  116:					;TODO remove or solve it
-  117:	  00A6	C2 95			CLR DetectedPin
+  102:
+  103:				;;;;;;TRY TO OPTIMIZE;;;;;;
+  104:	  008B	11 C0		Jmvfwd:	ACALL MoveForward
+  105:	  008D	02 00 A4	JMP BckMain
+  106:	  0090	11 C9		Jmvbwd:ACALL MoveBackward
+  107:	  0092	02 00 A4	JMP BckMain
+  108:	  0095	11 D2		Jmvright:ACALL MoveRight
+  109:	  0097	02 00 A4	JMP BckMain
+  110:	  009A	11 DB		Jmvleft:ACALL MoveLeft
+  111:	  009C	02 00 A4	JMP BckMain
+  112:	  009F	11 E4		Jstop:ACALL StopCar
+  113:	  00A1	02 00 A4	JMP BckMain
+  114:
+  115:	  00A4			BckMain:;SETB TRIG		; starts the trigger pulse
+  116:					;ACALL Delay10M     	; Delay 10uS width for the trigger pulse
+  117:					;CLR TRIG         	; ends the trigger pulse
   118:
-  119:	  00A8	D2 A0			SETB TRIG		; starts the trigger pulse
-  120:	  00AA	31 32			ACALL Delay10M     	; Delay 10uS width for the trigger pulse
-  121:	  00AC	C2 A0			CLR TRIG         	; ends the trigger pulse
-  122:
-  123:	  00AE	30 A1 FD		JNB ECHO,$    		; loops here until echo is received
+  119:					;JNB ECHO,$    		; loops here until echo is received
+  120:
+  121:					;ACALL CalcDistance
+  122:	  00A4	80 BA			SJMP Main	;Jump back to Main for looping
+  123:				;;;;;;TRY TO OPTIMIZE;;;;;;
   124:
-  125:	  00B1	31 09			ACALL CalcDistance
-  126:					;TODO when transistor be used
-  127:					;JB TF0, NoObj
-  128:					;ACALL Detected
-  129:
-  130:				;	SJMP TrigAgain
-  131:
-  132:	  00B3	11 B7			ACALL MoveForward
-  133:	  00B5	80 EB			SJMP TrigAgain		;short jumps to again loop
+  125:
+  126:				;AutoDriveMode is mode for auto move and detect objects
+  127:	  00A6			AutoDriveMode:
+  128:	  00A6	75 A8 90		MOV IE, #10010000B	;enables serial interrupt which can be caused by both TI/RI
+  129:	  00A9	D2 A5			SETB AutoLED		;Turn on auto drive LED
+  130:
+  131:	  00AB			TrigAgain:
+  132:	  00AB	C3			CLR C
+  133:	  00AC	30 A5 AA		JNB AutoLED, NormalMode	;IF autoLed pin is 0 JMP to NormalMode
   134:
-  135:	  00B7			MoveForward:
-  136:	  00B7	C2 93			CLR RightBackward
-  137:	  00B9	C2 91			CLR LeftBackward
-  138:	  00BB	D2 92			SETB RightForward
-  139:	  00BD	D2 90			SETB LeftForward
-  140:					;ACALL FeedBck
-  141:	  00BF	22			RET
-  142:
-  143:	  00C0			MoveBackward:
-  144:	  00C0	C2 92			CLR RightForward
-  145:	  00C2	C2 90			CLR LeftForward
-  146:	  00C4	D2 93			SETB RightBackward
-  147:	  00C6	D2 91			SETB LeftBackward
-  148:					;ACALL FeedBck
-  149:	  00C8	22			RET
+  135:					;TODO remove or solve it
+  136:	  00AF	C2 A6			CLR DetectedPin
+  137:
+  138:	  00B1	D2 A3			SETB TRIG		; starts the trigger pulse
+  139:	  00B3	31 4F			ACALL Delay10M     	; Delay 10uS width for the trigger pulse
+  140:	  00B5	C2 A3			CLR TRIG         	; ends the trigger pulse
+  141:
+  142:	  00B7	30 A4 FD		JNB ECHO,$    		; loops here until echo is received
+  143:
+  144:	  00BA	31 19			ACALL CalcDistance
+  145:					;TODO when transistor be used
+  146:					;JB TF0, NoObj
+  147:					;ACALL Detected
+  148:
+  149:				;	SJMP TrigAgain
   150:
-  151:	  00C9			MoveRight:
-  152:	  00C9	C2 93			CLR RightBackward
-  153:	  00CB	C2 91			CLR LeftBackward
-  154:	  00CD	C2 92			CLR RightForward
-  155:	  00CF	D2 90			SETB LeftForward
+  151:	  00BC	11 C0			ACALL MoveForward
+  152:	  00BE	80 EB			SJMP TrigAgain		;short jumps to again loop
+  153:
+  154:	  00C0			MoveForward:
+  155:	  00C0	C2 80			CLR RightBackward
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 4
 
@@ -194,62 +194,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-  156:					;ACALL FeedBck
-  157:	  00D1	22			RET
-  158:
-  159:	  00D2			MoveLeft:
-  160:	  00D2	D2 92			SETB RightForward
-  161:	  00D4	C2 90			CLR LeftForward
-  162:	  00D6	C2 93			CLR RightBackward
-  163:	  00D8	C2 91			CLR LeftBackward
-  164:					;ACALL FeedBck
-  165:	  00DA	22			RET
-  166:
-  167:	  00DB			StopCar:
-  168:	  00DB	C2 93			CLR RightBackward
-  169:	  00DD	C2 91			CLR LeftBackward
-  170:	  00DF	C2 92			CLR RightForward
-  171:	  00E1	C2 90			CLR LeftForward
-  172:					;ACALL FeedBck
-  173:	  00E3	22			RET
-  174:
-  175:				;If object detected MoveBack for 1 sec then move right for 2 sec
-  176:	  00E4			Detected:
-  177:	  00E4	D2 95			SETB DetectedPin
-  178:	  00E6	11 C0			ACALL MoveBackward
-  179:	  00E8	31 42			ACALL DelaySec
-  180:	  00EA	11 C9			ACALL MOVERight
-  181:	  00EC	31 42			ACALL DelaySec
-  182:	  00EE	31 42			ACALL DelaySec
-  183:	  00F0	C2 95			CLR DetectedPin
-  184:	  00F2	22			RET
+  156:	  00C2	C2 82			CLR LeftBackward
+  157:	  00C4	D2 81			SETB RightForward
+  158:	  00C6	D2 83			SETB LeftForward
+  159:					;ACALL FeedBck
+  160:	  00C8	22			RET
+  161:
+  162:	  00C9			MoveBackward:
+  163:	  00C9	C2 81			CLR RightForward
+  164:	  00CB	C2 83			CLR LeftForward
+  165:	  00CD	D2 80			SETB RightBackward
+  166:	  00CF	D2 82			SETB LeftBackward
+  167:					;ACALL FeedBck
+  168:	  00D1	22			RET
+  169:
+  170:	  00D2			MoveRight:
+  171:	  00D2	C2 80			CLR RightBackward
+  172:	  00D4	C2 82			CLR LeftBackward
+  173:	  00D6	C2 81			CLR RightForward
+  174:	  00D8	D2 83			SETB LeftForward
+  175:					;ACALL FeedBck
+  176:	  00DA	22			RET
+  177:
+  178:	  00DB			MoveLeft:
+  179:	  00DB	D2 81			SETB RightForward
+  180:	  00DD	C2 83			CLR LeftForward
+  181:	  00DF	C2 80			CLR RightBackward
+  182:	  00E1	C2 82			CLR LeftBackward
+  183:					;ACALL FeedBck
+  184:	  00E3	22			RET
   185:
-  186:				;Display LOOP for send char to serial port for printing it on virtual terminal
-  187:	  00F3	74 01		DLOOP:	MOV A, #01H	; CLEAR LCD
-  188:					;ACALL COMMANDWRT
-  189:
-  190:	  00F5	EE			MOV A, R6
-  191:	  00F6	7F 00			MOV R7, #0D	;Counter to store count of numbers
-  192:				;PrintDEC, print => for converting hex value to decimal then print each number
-  193:	  00F8				PrintDEC:
-  194:	  00F8	0F				INC R7
-  195:	  00F9	75 F0 0A			MOV B, #10D
-  196:	  00FC	84				DIV AB			;the quotient is stored in the accumulator and the remainder
-				 is stored in the B register
-  197:	  00FD	C0 F0				PUSH B
-  198:	  00FF	B4 00 F6			CJNE A, #0D, PrintDEC	;Compare the first two operands and branches to the specifie
-				d destination if their values are not equal
-  199:
-  200:	  0102	D0 05			print:	POP 05H			;POP to 05H which is R5
-  201:	  0104	ED				MOV A, R5
-  202:	  0105	24 30				ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
-  203:	  0107	F9				MOV R1, A;TODO REMOVE
-  204:						;PRINTING A CHARACTER
-  205:						;CALL SENDCHAR
-  206:
-  207:
-  208:	  0108	22		RET
-  209:
+  186:	  00E4			StopCar:
+  187:	  00E4	C2 80			CLR RightBackward
+  188:	  00E6	C2 82			CLR LeftBackward
+  189:	  00E8	C2 81			CLR RightForward
+  190:	  00EA	C2 83			CLR LeftForward
+  191:					;ACALL FeedBck
+  192:	  00EC	22			RET
+  193:
+  194:				;If object detected MoveBack for 1 sec then move right for 2 sec
+  195:	  00ED			Detected:
+  196:	  00ED	D2 A6			SETB DetectedPin
+  197:	  00EF	11 C9			ACALL MoveBackward
+  198:	  00F1	31 5F			ACALL DelaySec
+  199:	  00F3	11 D2			ACALL MOVERight
+  200:	  00F5	31 5F			ACALL DelaySec
+  201:	  00F7	31 5F			ACALL DelaySec
+  202:	  00F9	C2 A6			CLR DetectedPin
+  203:	  00FB	22			RET
+  204:
+  205:				;Display LOOP for send char to serial port for printing it on virtual terminal
+  206:	  00FC	74 01		DLOOP:	MOV A, #01H	; CLEAR LCD
+  207:	  00FE	31 7C			ACALL COMMANDWRT
+  208:
+  209:	  0100	EE			MOV A, R6
+  210:	  0101	7F 00			MOV R7, #0D	;Counter to store count of numbers
+  211:				;PrintDEC, print => for converting hex value to decimal then print each number
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 5
 
@@ -257,62 +257,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-  210:	  0109			CalcDistance:
-  211:					;Loop until ECHO pin is low
-  212:					;Start counting ticks from 44103D => AC47
-  213:					;44103D for maximum distance
-  214:	  0109	75 8A 47		MOV TL0, #47H
-  215:	  010C	75 8C AC		MOV TH0, #0ACH
-  216:
-  217:	  010F	C2 8D			CLR TF0
-  218:	  0111	D2 8C			SETB TR0	;start timer 0
-  219:
-  220:					;TODO LOOP while ECHO 1 and TF0 is 0
-  221:	  0113	20 A1 FD		JB ECHO, $	;If ECHO is high loop to echo is 1
-  222:
-  223:	  0116	74 C1			MOV A, #0C1H
-  224:	  0118	C3			CLR C
-  225:	  0119	95 8C			SUBB A, TH0
-  226:	  011B	54 80			ANL A, #10000000B
-  227:	  011D	70 0B			JNZ NoObj
-  228:	  011F	74 35			MOV A, #35H
-  229:	  0121	C3			CLR C
-  230:	  0122	95 8A			SUBB A, TL0
-  231:	  0124	54 80			ANL A, #10000000B
-  232:	  0126	70 02			JNZ NoObj
-  233:	  0128	11 E4			ACALL Detected
-  234:
-  235:					;C135 for i meter
-  236:
-  237:
-  238:					;TODO
-  239:					;CheckECHO:JB ECHO, CheckOF
-  240:					;	JMP d
-  241:					;CheckOF: JNB TF0, CheckECHO
-  242:							;IF else
-  243:						;ACALL RestartUS
-  244:	  012A	C2 8C		NoObj:	CLR TR0
-  245:	  012C	C2 8D			CLR TF0
-  246:
-  247:	  012E	22		RET
-  248:
-  249:				;TODO
-  250:				;restart ultrasonic sensor
-  251:	  012F			RestartUS:
-  252:	  012F	C2 8C		CLR TR0
-  253:	  0131	22		RET
-  254:
-  255:
-  256:				;Delay 10 micro sec
-  257:	  0132			Delay10M:
-  258:					;MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
-  259:	  0132	75 8A F7		MOV TL0, #0F7H
-  260:	  0135	75 8C FF		MOV TH0, #0FFH
+  212:	  0103				PrintDEC:
+  213:	  0103	0F				INC R7
+  214:	  0104	75 F0 0A			MOV B, #10D
+  215:	  0107	84				DIV AB			;the quotient is stored in the accumulator and the remainder
+				 is stored in the B register
+  216:	  0108	C0 F0				PUSH B
+  217:	  010A	B4 00 F6			CJNE A, #0D, PrintDEC	;Compare the first two operands and branches to the specifie
+				d destination if their values are not equal
+  218:
+  219:	  010D	D0 05			print:	POP 05H			;POP to 05H which is R5
+  220:	  010F	ED				MOV A, R5
+  221:	  0110	24 30				ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
+  222:	  0112	F9				MOV R1, A;TODO REMOVE
+  223:						;PRINTING A CHARACTER
+  224:	  0113	12 01 77			CALL SENDCHAR
+  225:
+  226:						;ACALL DelaySec		;TODO i think it is not useful
+  227:	  0116	DF F5				DJNZ R7, print		;decrements the byte indicated by the first operand and, if
+				the resulting value is not zero, branches to the address specified in the second operand.
+  228:
+  229:
+  230:
+  231:	  0118	22		RET
+  232:
+  233:	  0119			CalcDistance:
+  234:					;Loop until ECHO pin is low
+  235:					;Start counting ticks from 44103D => AC47
+  236:					;44103D for maximum distance
+  237:	  0119	75 8A 47		MOV TL0, #47H
+  238:	  011C	75 8C AC		MOV TH0, #0ACH
+  239:
+  240:	  011F	C2 8D			CLR TF0
+  241:	  0121	D2 8C			SETB TR0	;start timer 0
+  242:
+  243:					;TODO LOOP while ECHO 1 and TF0 is 0
+  244:	  0123	20 A4 FD		JB ECHO, $	;If ECHO is high loop to echo is 1
+  245:	  0126	C2 8C			CLR TR0
+  246:	  0128	C2 8D			CLR TF0
+  247:
+  248:	  012A	74 C1			MOV A, #0C1H
+  249:	  012C	C3			CLR C
+  250:	  012D	95 8C			SUBB A, TH0
+  251:	  012F	54 80			ANL A, #10000000B
+  252:	  0131	70 02			JNZ NoObj
+  253:					;MOV A, #35H
+  254:					;CLR C
+  255:					;SUBB A, TL0
+  256:					;ANL A, #10000000B
+  257:					;JNZ NoObj
+  258:	  0133	11 ED			ACALL Detected
+  259:
+  260:					;C135 for i meter
   261:
-  262:	  0138	D2 8C			SETB TR0
-  263:
-  264:	  013A	30 8D FD		JNB TF0, $
-  265:	  013D	C2 8C			CLR TR0
+  262:
+  263:					;TODO
+  264:					;CheckECHO:JB ECHO, CheckOF
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 6
 
@@ -320,62 +320,62 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-  266:	  013F	C2 8D			CLR TF0
-  267:	  0141	22		RET
-  268:
-  269:	  0142			DelaySec:
-  270:	  0142	C0 07			PUSH 07H
-  271:	  0144	7F 14		    	MOV R7, #20D
-  272:				    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
-  273:					;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
-  274:	  0146				DelaySecLoop:
-  275:	  0146	75 8A 00	    		MOV TL0, #00H
-  276:	  0149	75 8C 4C	    		MOV TH0, #4CH
-  277:	  014C	D2 8C		    		SETB TR0	;Start timer 0
-  278:
-  279:	  014E	30 8D FD	    		JNB TF0, $	;Loop until Timer 0 overflow = 1
-  280:	  0151	C2 8C		    		CLR TR0		;Stop timer 0
-  281:	  0153	C2 8D		    		CLR TF0		;Clear overFlow
-  282:
-  283:	  0155	DF EF		    		DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
-  284:
-  285:	  0157	D0 07		    	POP 07H
-  286:	  0159	22		RET
-  287:
+  265:					;	JMP d
+  266:					;CheckOF: JNB TF0, CheckECHO
+  267:							;IF else
+  268:						;ACALL RestartUS
+  269:	  0135			NoObj:
+  270:
+  271:	  0135	C3			CLR C
+  272:	  0136	E5 8C			MOV A, TH0
+  273:	  0138	94 AC			SUBB A, #0ACH
+  274:	  013A	F9			MOV R1, A;for division
+  275:
+  276:	  013B	C3			CLR C
+  277:	  013C	E5 8A			MOV A, TL0
+  278:	  013E	94 47			SUBB A, #47H
+  279:	  0140	F8			MOV R0, A
+  280:
+  281:	  0141	7B 00			MOV R3, #0
+  282:	  0143	7A 3A			MOV R2, #58D
+  283:
+  284:	  0145	31 9F			ACALL DIV_16
+  285:	  0147	EA			MOV A, R2
+  286:	  0148	FE			MOV R6, A
+  287:	  0149	11 FC			ACALL DLOOP
   288:
-  289:				;SENDING A CHARACHTER SUBROUTINE
-  290:				;SENDCHAR:
-  291:				;	ACALL DATAWRT
-  292:				;	ACALL DELAY
-  293:				;	RET
-  294:
-  295:				;COMMAND SUB-ROUTINE FOR LCD CONTROL
-  296:				;COMMANDWRT:
+  289:	  014B	22		RET
+  290:
+  291:				;TODO
+  292:				;restart ultrasonic sensor
+  293:	  014C			RestartUS:
+  294:	  014C	C2 8C		CLR TR0
+  295:	  014E	22		RET
+  296:
   297:
-  298:				 ;   	MOV P1, A ;SEND DATA TO P1
-  299:				;	CLR RS	;RS=0 FOR COMMAND
-  300:				;	CLR RW	;R/W=0 FOR WRITE
-  301:				;	SETB EN	;E=1 FOR HIGH PULSE
-  302:				;	ACALL DELAY
-  303:				;	CLR EN	;E=0 FOR H-L PULSE
-  304:
-  305:				;	RET
-  306:
-  307:				;SUBROUTINE FOR DATA LACTCHING TO LCD
-  308:				;DATAWRT:
-  309:
-  310:				;	MOV DATABUS, A
-  311:				 ;   	SETB RS	;RS=1 FOR DATA
-  312:				  ;  	CLR RW
-  313:				   ; 	SETB EN
-  314:				    ;	ACALL DELAY
-  315:					;CLR EN
-  316:
-  317:					;RET
-  318:
-  319:
+  298:				;Delay 10 micro sec
+  299:	  014F			Delay10M:
+  300:					;MOV TMOD, #00000001B ;set timer0 as mode 1 16-bit
+  301:	  014F	75 8A F7		MOV TL0, #0F7H
+  302:	  0152	75 8C FF		MOV TH0, #0FFH
+  303:
+  304:	  0155	D2 8C			SETB TR0
+  305:
+  306:	  0157	30 8D FD		JNB TF0, $
+  307:	  015A	C2 8C			CLR TR0
+  308:	  015C	C2 8D			CLR TF0
+  309:	  015E	22		RET
+  310:
+  311:	  015F			DelaySec:
+  312:	  015F	C0 07			PUSH 07H
+  313:	  0161	7F 14		    	MOV R7, #20D
+  314:				    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
+  315:					;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
+  316:	  0163				DelaySecLoop:
+  317:	  0163	75 8A 00	    		MOV TL0, #00H
+  318:	  0166	75 8C 4C	    		MOV TH0, #4CH
+  319:	  0169	D2 8C		    		SETB TR0	;Start timer 0
   320:
-  321:	  015A			SERIALINT:
 
 ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 7
 
@@ -383,26 +383,138 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
  Line  I  Addr  Code            Source
 
-  322:	  015A	20 99 05		JB TI, TRANS; if the interrupt is caused by T1 control is transferred to trans as the old da
-				ta has been transferred and new data can be sent to the SBUF
-  323:	  015D	C2 97			CLR AutoLED
-  324:	  015F	C2 98		        CLR RI; clears RI flag
-  325:	  0161	32		        RETI; transfers control to main
+  321:	  016B	30 8D FD	    		JNB TF0, $	;Loop until Timer 0 overflow = 1
+  322:	  016E	C2 8C		    		CLR TR0		;Stop timer 0
+  323:	  0170	C2 8D		    		CLR TF0		;Clear overFlow
+  324:
+  325:	  0172	DF EF		    		DJNZ R7, DelaySecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
   326:
-  327:	  0162	32		TRANS:	RETI;  transfers control to main
-  328:
+  327:	  0174	D0 07		    	POP 07H
+  328:	  0176	22		RET
   329:
-  330:	  0163			DELAY:
-  331:	  0163	78 0A		    	MOV R0, #10 ;DELAY. HIGHER VALUE FOR FASTER CPUS
-  332:	  0165	79 FF		Y:	MOV R1, #255
-  333:	  0167	D9 FE			DJNZ R1, $
-  334:	  0169	D8 FA			DJNZ R0, Y
-  335:
-  336:	  016B	22			RET
-  337:
-  338:				END
+  330:
+  331:				;SENDING A CHARACHTER SUBROUTINE
+  332:	  0177			SENDCHAR:
+  333:	  0177	31 89			ACALL DATAWRT
+  334:	  0179	31 96			ACALL DELAY
+  335:	  017B	22			RET
+  336:
+  337:				;COMMAND SUB-ROUTINE FOR LCD CONTROL
+  338:	  017C			COMMANDWRT:
   339:
-  340:
+  340:	  017C	F5 90		    	MOV P1, A ;SEND DATA TO P1
+  341:	  017E	C2 A0			CLR RS	;RS=0 FOR COMMAND
+  342:	  0180	C2 A1			CLR RW	;R/W=0 FOR WRITE
+  343:	  0182	D2 A2			SETB EN	;E=1 FOR HIGH PULSE
+  344:	  0184	31 96			ACALL DELAY
+  345:	  0186	C2 A2			CLR EN	;E=0 FOR H-L PULSE
+  346:
+  347:	  0188	22			RET
+  348:
+  349:				;SUBROUTINE FOR DATA LACTCHING TO LCD
+  350:	  0189			DATAWRT:
+  351:
+  352:	  0189	F5 90			MOV DATABUS, A
+  353:	  018B	D2 A0		    	SETB RS	;RS=1 FOR DATA
+  354:	  018D	C2 A1		    	CLR RW
+  355:	  018F	D2 A2		    	SETB EN
+  356:	  0191	31 96		    	ACALL DELAY
+  357:	  0193	C2 A2			CLR EN
+  358:
+  359:	  0195	22			RET
+  360:
+  361:	  0196			DELAY:
+  362:	  0196	78 0A		    	MOV R0, #10 ;DELAY. HIGHER VALUE FOR FASTER CPUS
+  363:	  0198	79 FF		Y:	MOV R1, #255
+  364:	  019A	D9 FE			DJNZ R1, $
+  365:	  019C	D8 FA			DJNZ R0, Y
+  366:
+  367:	  019E	22			RET
+  368:
+  369:				;16bit division
+  370:				; R1 R0
+  371:				; / R3 R2
+  372:				; = R3 R2
+  373:				; shift left the divisor such that the number of digits
+  374:				; in the divisor is the same as the number of digits in the dividend
+  375:				; shift right the divisor and substract this shifted divisor from the dividend
+  376:				; repeat the process again until the divisor has shifted into its original position
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 8
+
+
+
+ Line  I  Addr  Code            Source
+
+  377:	  019F			DIV_16:
+  378:	  019F	C3			CLR C 	;Clear carry initially
+  379:	  01A0	7C 00			MOV R4,#00h	;Clear R4 working variable initially
+  380:	  01A2	7D 00			MOV R5,#00h	;CLear R5 working variable initially
+  381:	  01A4	75 F0 00		MOV B,#00h 	;Clear B since B will count the number of left-shifted bits
+  382:	  01A7			lshift:
+  383:	  01A7	05 F0			INC B 	;Increment counter for each left shift
+  384:	  01A9	EA			MOV A,R2 	;Move the current divisor low byte into the accumulator
+  385:	  01AA	33			RLC A 	;Shift low-byte left, rotate through carry to apply highest bit to high-byte
+  386:	  01AB	FA			MOV R2,A 	;Save the updated divisor low-byte
+  387:	  01AC	EB			MOV A,R3 	;Move the current divisor high byte into the accumulator
+  388:	  01AD	33			RLC A 	;Shift high-byte left high, rotating in carry from low-byte
+  389:	  01AE	FB			MOV R3,A 	;Save the updated divisor high-byte
+  390:	  01AF	50 F6			JNC lshift 	;Repeat until carry flag is set from high-byte
+  391:	  01B1			rshift: 		;Shift right the divisor
+  392:	  01B1	EB			MOV A,R3 	;Move high-byte of divisor into accumulator
+  393:	  01B2	13			RRC A 	;Rotate high-byte of divisor right and into carry
+  394:	  01B3	FB			MOV R3,A 	;Save updated value of high-byte of divisor
+  395:	  01B4	EA			MOV A,R2 	;Move low-byte of divisor into accumulator
+  396:	  01B5	13			RRC A 	;Rotate low-byte of divisor right, with carry from high-byte
+  397:	  01B6	FA			MOV R2,A 	;Save updated value of low-byte of divisor
+  398:	  01B7	C3			CLR C 	;Clear carry, we don't need it anymore
+  399:	  01B8	89 07			MOV 07h,R1 	;Make a safe copy of the dividend high-byte
+  400:	  01BA	88 06			MOV 06h,R0 	;Make a safe copy of the dividend low-byte
+  401:	  01BC	E8			MOV A,R0 	;Move low-byte of dividend into accumulator
+  402:	  01BD	9A			SUBB A,R2 	;Dividend - shifted divisor = result bit (no factor, only 0 or 1)
+  403:	  01BE	F8			MOV R0,A 	;Save updated dividend
+  404:	  01BF	E9			MOV A,R1 	;Move high-byte of dividend into accumulator
+  405:	  01C0	9B			SUBB A,R3 	;Subtract high-byte of divisor (all together 16-bit substraction)
+  406:	  01C1	F9			MOV R1,A 	;Save updated high-byte back in high-byte of divisor
+  407:	  01C2	50 04			JNC result 	;If carry flag is NOT set, result is 1
+  408:	  01C4	A9 07			MOV R1,07h 	;Otherwise result is 0, save copy of divisor to undo subtraction
+  409:	  01C6	A8 06			MOV R0,06h
+  410:	  01C8			result:
+  411:	  01C8	B3			CPL C 	;Invert carry, so it can be directly copied into result
+  412:	  01C9	EC			MOV A,R4
+  413:	  01CA	33			RLC A 	;Shift carry flag into temporary result
+  414:	  01CB	FC			MOV R4,A
+  415:	  01CC	ED			MOV A,R5
+  416:	  01CD	33			RLC A
+  417:	  01CE	FD			MOV R5,A
+  418:	  01CF	D5 F0 DF		DJNZ B,rshift 	;Now count backwards and repeat until "B" is zero
+  419:	  01D2	AB 05			MOV R3,05h 	;Move result to R3/R2
+  420:	  01D4	AA 04			MOV R2,04h 	;Move result to R3/R2
+  421:	  01D6	22			RET
+  422:
+  423:
+  424:	  01D7			SERIALINT:
+  425:	  01D7	20 99 05		JB TI, TRANS; if the interrupt is caused by T1 control is transferred to trans as the old da
+				ta has been transferred and new data can be sent to the SBUF
+  426:	  01DA	C2 A5			CLR AutoLED
+  427:	  01DC	C2 98		        CLR RI; clears RI flag
+  428:	  01DE	32		        RETI; transfers control to main
+  429:
+  430:	  01DF	32		TRANS:	RETI;  transfers control to main
+  431:
+
+ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 9
+
+
+
+ Line  I  Addr  Code            Source
+
+  432:
+  433:
+  434:
+  435:				END
+  436:
+  437:
 
 
 
@@ -415,7 +527,7 @@ ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. 
 
 
 
-ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 8
+ASEM-51 V1.3                                        Copyright (c) 2002 by W.W. Heinz                                         PAGE 10
 
 
 
@@ -431,23 +543,28 @@ SYMBOL				  TYPE     VALUE	LINE
 ??VERSION			  NUMBER    0130
 AC				  BIT	      D6
 ACC				  DATA	      E0
-AUTODRIVEMODE			  CODE	    009D	 108
-AUTOLED				  NUMBER    0097	  18
+AUTODRIVEMODE			  CODE	    00A6	 127
+AUTOLED				  NUMBER    00A5	  18
 B				  DATA	      F0
-BCKMAIN				  CODE	    009B	  96
-CALCDISTANCE			  CODE	    0109	 210
+BCKMAIN				  CODE	    00A4	 115
+CALCDISTANCE			  CODE	    0119	 233
+COMMANDWRT			  CODE	    017C	 338
 CY				  BIT	      D7
-DELAY				  CODE	    0163	 330
-DELAY10M			  CODE	    0132	 257
-DELAYSEC			  CODE	    0142	 269
-DELAYSECLOOP			  CODE	    0146	 274
-DETECTED			  CODE	    00E4	 176
-DETECTEDPIN			  NUMBER    0095	  20
-DLOOP				  CODE	    00F3	 187
+DATABUS				  NUMBER    0090	  38
+DATAWRT				  CODE	    0189	 350
+DELAY				  CODE	    0196	 361
+DELAY10M			  CODE	    014F	 299
+DELAYSEC			  CODE	    015F	 311
+DELAYSECLOOP			  CODE	    0163	 316
+DETECTED			  CODE	    00ED	 195
+DETECTEDPIN			  NUMBER    00A6	  20
+DIV_16				  CODE	    019F	 377
+DLOOP				  CODE	    00FC	 206
 DPH				  DATA	      83
 DPL				  DATA	      82
 EA				  BIT	      AF
-ECHO				  NUMBER    00A1	  25
+ECHO				  NUMBER    00A4	  25
+EN				  BIT	      A2	  37
 ES				  BIT	      AC
 ET0				  BIT	      A9
 ET1				  BIT	      AB
@@ -464,28 +581,30 @@ INT1				  BIT	      B3
 IP				  DATA	      B8
 IT0				  BIT	      88
 IT1				  BIT	      8A
-JMVBWD				  CODE	    0087	  87
-JMVFWD				  CODE	    0082	  85
-JMVLEFT				  CODE	    0091	  91
-JMVRIGHT			  CODE	    008C	  89
-JSTOP				  CODE	    0096	  93
-LEFTBACKWARD			  NUMBER    0091	  13
-LEFTFORWARD			  NUMBER    0090	  12
-MAIN				  CODE	    0057	  48
-MOVEBACKWARD			  CODE	    00C0	 143
-MOVEFORWARD			  CODE	    00B7	 135
-MOVELEFT			  CODE	    00D2	 159
-MOVERIGHT			  CODE	    00C9	 151
-NOOBJ				  CODE	    012A	 244
+JMVBWD				  CODE	    0090	 106
+JMVFWD				  CODE	    008B	 104
+JMVLEFT				  CODE	    009A	 110
+JMVRIGHT			  CODE	    0095	 108
+JSTOP				  CODE	    009F	 112
+LCD_F				  BIT	      97	  39
+LEFTBACKWARD			  NUMBER    0082	  13
+LEFTFORWARD			  NUMBER    0083	  12
 
-ASEM-51 V1.3                                         Copyright (c) 2002 by W.W. Heinz                                         PAGE 9
+ASEM-51 V1.3                                        Copyright (c) 2002 by W.W. Heinz                                         PAGE 11
 
 
 
 SYMBOL				  TYPE     VALUE	LINE
 ------------------------------------------------------------
-NORMALMODE			  CODE	    0050	  42
-ONLED				  NUMBER    0096	  19
+LSHIFT				  CODE	    01A7	 382
+MAIN				  CODE	    0060	  67
+MOVEBACKWARD			  CODE	    00C9	 162
+MOVEFORWARD			  CODE	    00C0	 154
+MOVELEFT			  CODE	    00DB	 178
+MOVERIGHT			  CODE	    00D2	 170
+NOOBJ				  CODE	    0135	 269
+NORMALMODE			  CODE	    0059	  61
+ONLED				  NUMBER    00A7	  19
 OV				  BIT	      D2
 P				  BIT	      D0
 P0				  DATA	      80
@@ -493,8 +612,8 @@ P1				  DATA	      90
 P2				  DATA	      A0
 P3				  DATA	      B0
 PCON				  DATA	      87
-PRINT				  CODE	    0102	 200
-PRINTDEC			  CODE	    00F8	 193
+PRINT				  CODE	    010D	 219
+PRINTDEC			  CODE	    0103	 212
 PS				  BIT	      BC
 PSW				  DATA	      D0
 PT0				  BIT	      B9
@@ -505,29 +624,41 @@ RB8				  BIT	      9A
 RD				  BIT	      B7
 REN				  BIT	      9C
 RESET				  CODE	    0000
-RESTARTUS			  CODE	    012F	 251
+RESTARTUS			  CODE	    014C	 293
+RESULT				  CODE	    01C8	 410
 RI				  BIT	      98
-RIGHTBACKWARD			  NUMBER    0093	  15
-RIGHTFORWARD			  NUMBER    0092	  14
+RIGHTBACKWARD			  NUMBER    0080	  15
+RIGHTFORWARD			  NUMBER    0081	  14
+RS				  BIT	      A0	  35
 RS0				  BIT	      D3
 RS1				  BIT	      D4
+RSHIFT				  CODE	    01B1	 391
+RW				  BIT	      A1	  36
 RXD				  BIT	      B0
 SBUF				  DATA	      99
 SCON				  DATA	      98
-SERIALINT			  CODE	    015A	 321
+SENDCHAR			  CODE	    0177	 332
+SERIALINT			  CODE	    01D7	 424
 SINT				  CODE	    0023
 SM0				  BIT	      9F
 SM1				  BIT	      9E
 SM2				  BIT	      9D
 SP				  DATA	      81
 START				  CODE	    0030	  10
-STOPCAR				  CODE	    00DB	 167
+STOPCAR				  CODE	    00E4	 186
 T0				  BIT	      B4
 T1				  BIT	      B5
 TB8				  BIT	      9B
 TCON				  DATA	      88
 TF0				  BIT	      8D
 TF1				  BIT	      8F
+
+ASEM-51 V1.3                                        Copyright (c) 2002 by W.W. Heinz                                         PAGE 12
+
+
+
+SYMBOL				  TYPE     VALUE	LINE
+------------------------------------------------------------
 TH0				  DATA	      8C
 TH1				  DATA	      8D
 TI				  BIT	      99
@@ -538,16 +669,9 @@ TL1				  DATA	      8B
 TMOD				  DATA	      89
 TR0				  BIT	      8C
 TR1				  BIT	      8E
-TRANS				  CODE	    0162	 327
-TRIG				  NUMBER    00A0	  24
-
-ASEM-51 V1.3                                        Copyright (c) 2002 by W.W. Heinz                                         PAGE 10
-
-
-
-SYMBOL				  TYPE     VALUE	LINE
-------------------------------------------------------------
-TRIGAGAIN			  CODE	    00A2	 112
+TRANS				  CODE	    01DF	 430
+TRIG				  NUMBER    00A3	  24
+TRIGAGAIN			  CODE	    00AB	 131
 TXD				  BIT	      B1
 WR				  BIT	      B6
-Y				  CODE	    0165	 332
+Y				  CODE	    0198	 363

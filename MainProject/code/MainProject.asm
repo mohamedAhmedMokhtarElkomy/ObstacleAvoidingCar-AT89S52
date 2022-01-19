@@ -8,21 +8,21 @@ LJMP SERIALINT
 ;R3 for storing value of TH from ultrasonic echo
 ORG 30H
 START:
-MOV P0, #0
-LeftForward EQU P1.0
-LeftBackward EQU P1.1
-RightForward EQU P1.2
-RightBackward EQU P1.3
-CLR P1.4
+;MOV P0, #0
+LeftForward EQU P0.3
+LeftBackward EQU P0.2
+RightForward EQU P0.1
+RightBackward EQU P0.0
+;CLR P1.4
 
-AutoLED EQU P1.7	;LED indicate if Auto mode is on or not
-OnLED EQU P1.6
-DetectedPin EQU P1.5
+AutoLED EQU P2.5	;LED indicate if Auto mode is on or not
+OnLED EQU P2.7
+DetectedPin EQU P2.6
 CLR DetectedPin
-SETB OnLED
+CLR OnLED
 
-TRIG EQU P2.0
-ECHO EQU P2.1
+TRIG EQU P2.3
+ECHO EQU P2.4
 
 CLR TRIG		; sets P2.0(TRIG) as output for sending trigger
 SETB ECHO		; sets P2.1(ECHO) as input for receiving echo
@@ -32,6 +32,24 @@ CLR LeftBackward	; sets P1.1(LeftBackward) as output
 CLR RightForward	; sets P1.2(RightForward) as output
 CLR RightBackward	; sets P1.3(RightBackward) as output
 
+RS BIT P2.0
+RW BIT P2.1
+EN  BIT P2.2
+DATABUS EQU P1
+LCD_F BIT P1.7
+
+;LCD INITIALIZATION
+		MOV A, #38H	; INITIATE LCD
+		ACALL COMMANDWRT
+
+		MOV A, #0FH	; DISPLAY ON CURSOR ON
+		ACALL COMMANDWRT
+		
+		MOV A, #01H	; CLEAR LCD
+		ACALL COMMANDWRT
+
+
+
 ;Setup serial port and timer 1 for bluetooth
 MOV TMOD, #00100001B	;Mode 2 for timer 1 (8 bit auto reload)
 MOV TH1, #0FDH		;setting baud rate 9600
@@ -39,6 +57,7 @@ MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
 SETB TR1		;Run timer 1
 ;MOV IE, #10000000B	;enables interrupt
 
+SETB OnLED
 NormalMode:
 	;The following to instruction to reset when returning from AutoDriveMode 
 	CLR AutoLED
@@ -185,7 +204,7 @@ Detected:
 	
 ;Display LOOP for send char to serial port for printing it on virtual terminal
 DLOOP:	MOV A, #01H	; CLEAR LCD
-	;ACALL COMMANDWRT
+	ACALL COMMANDWRT
 
 	MOV A, R6
 	MOV R7, #0D	;Counter to store count of numbers
@@ -202,7 +221,11 @@ DLOOP:	MOV A, #01H	; CLEAR LCD
 		ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
 		MOV R1, A;TODO REMOVE
 		;PRINTING A CHARACTER
-		;CALL SENDCHAR
+		CALL SENDCHAR
+
+		;ACALL DelaySec		;TODO i think it is not useful
+		DJNZ R7, print		;decrements the byte indicated by the first operand and, if the resulting value is not zero, branches to the address specified in the second operand.
+
 
 	
 RET	
@@ -219,17 +242,19 @@ CalcDistance:
 	
 	;TODO LOOP while ECHO 1 and TF0 is 0	
 	JB ECHO, $	;If ECHO is high loop to echo is 1 
+	CLR TR0
+	CLR TF0
 	
 	MOV A, #0C1H
 	CLR C
 	SUBB A, TH0
 	ANL A, #10000000B
 	JNZ NoObj
-	MOV A, #35H
-	CLR C
-	SUBB A, TL0
-	ANL A, #10000000B
-	JNZ NoObj
+	;MOV A, #35H
+	;CLR C
+	;SUBB A, TL0
+	;ANL A, #10000000B
+	;JNZ NoObj
 	ACALL Detected
 	
 	;C135 for i meter
@@ -241,8 +266,25 @@ CalcDistance:
 	;CheckOF: JNB TF0, CheckECHO
 			;IF else
 		;ACALL RestartUS
-NoObj:	CLR TR0
-	CLR TF0
+NoObj:
+	
+	CLR C
+	MOV A, TH0
+	SUBB A, #0ACH
+	MOV R1, A;for division
+	
+	CLR C
+	MOV A, TL0
+	SUBB A, #47H
+	MOV R0, A
+	
+	MOV R3, #0
+	MOV R2, #58D
+	
+	ACALL DIV_16
+	MOV A, R2
+	MOV R6, A
+	ACALL DLOOP
 
 RET
 
@@ -287,37 +329,98 @@ RET
 
 		
 ;SENDING A CHARACHTER SUBROUTINE
-;SENDCHAR:
-;	ACALL DATAWRT
-;	ACALL DELAY
-;	RET		
+SENDCHAR:
+	ACALL DATAWRT
+	ACALL DELAY
+	RET		
 
 ;COMMAND SUB-ROUTINE FOR LCD CONTROL
-;COMMANDWRT:
+COMMANDWRT:
 
- ;   	MOV P1, A ;SEND DATA TO P1
-;	CLR RS	;RS=0 FOR COMMAND
-;	CLR RW	;R/W=0 FOR WRITE
-;	SETB EN	;E=1 FOR HIGH PULSE
-;	ACALL DELAY
-;	CLR EN	;E=0 FOR H-L PULSE
+    	MOV P1, A ;SEND DATA TO P1
+	CLR RS	;RS=0 FOR COMMAND
+	CLR RW	;R/W=0 FOR WRITE
+	SETB EN	;E=1 FOR HIGH PULSE
+	ACALL DELAY
+	CLR EN	;E=0 FOR H-L PULSE
 	
-;	RET
+	RET
 
 ;SUBROUTINE FOR DATA LACTCHING TO LCD
-;DATAWRT:
+DATAWRT:
 
-;	MOV DATABUS, A
- ;   	SETB RS	;RS=1 FOR DATA
-  ;  	CLR RW
-   ; 	SETB EN
-    ;	ACALL DELAY
-	;CLR EN
+	MOV DATABUS, A
+    	SETB RS	;RS=1 FOR DATA
+    	CLR RW
+    	SETB EN
+    	ACALL DELAY
+	CLR EN
 
-	;RET
+	RET
+	
+DELAY:
+    	MOV R0, #10 ;DELAY. HIGHER VALUE FOR FASTER CPUS
+Y:	MOV R1, #255
+	DJNZ R1, $
+	DJNZ R0, Y
 
-		
-
+	RET
+	
+;16bit division
+; R1 R0
+; / R3 R2
+; = R3 R2
+; shift left the divisor such that the number of digits
+; in the divisor is the same as the number of digits in the dividend
+; shift right the divisor and substract this shifted divisor from the dividend
+; repeat the process again until the divisor has shifted into its original position	
+DIV_16:		
+	CLR C 	;Clear carry initially
+	MOV R4,#00h	;Clear R4 working variable initially
+	MOV R5,#00h	;CLear R5 working variable initially
+	MOV B,#00h 	;Clear B since B will count the number of left-shifted bits
+lshift:		
+	INC B 	;Increment counter for each left shift
+	MOV A,R2 	;Move the current divisor low byte into the accumulator
+	RLC A 	;Shift low-byte left, rotate through carry to apply highest bit to high-byte
+	MOV R2,A 	;Save the updated divisor low-byte
+	MOV A,R3 	;Move the current divisor high byte into the accumulator
+	RLC A 	;Shift high-byte left high, rotating in carry from low-byte
+	MOV R3,A 	;Save the updated divisor high-byte
+	JNC lshift 	;Repeat until carry flag is set from high-byte
+rshift: 		;Shift right the divisor
+	MOV A,R3 	;Move high-byte of divisor into accumulator
+	RRC A 	;Rotate high-byte of divisor right and into carry
+	MOV R3,A 	;Save updated value of high-byte of divisor
+	MOV A,R2 	;Move low-byte of divisor into accumulator
+	RRC A 	;Rotate low-byte of divisor right, with carry from high-byte
+	MOV R2,A 	;Save updated value of low-byte of divisor
+	CLR C 	;Clear carry, we don't need it anymore
+	MOV 07h,R1 	;Make a safe copy of the dividend high-byte
+	MOV 06h,R0 	;Make a safe copy of the dividend low-byte
+	MOV A,R0 	;Move low-byte of dividend into accumulator
+	SUBB A,R2 	;Dividend - shifted divisor = result bit (no factor, only 0 or 1)
+	MOV R0,A 	;Save updated dividend
+	MOV A,R1 	;Move high-byte of dividend into accumulator
+	SUBB A,R3 	;Subtract high-byte of divisor (all together 16-bit substraction)
+	MOV R1,A 	;Save updated high-byte back in high-byte of divisor
+	JNC result 	;If carry flag is NOT set, result is 1
+	MOV R1,07h 	;Otherwise result is 0, save copy of divisor to undo subtraction
+	MOV R0,06h	
+result:		
+	CPL C 	;Invert carry, so it can be directly copied into result
+	MOV A,R4	
+	RLC A 	;Shift carry flag into temporary result
+	MOV R4,A 	
+	MOV A,R5	
+	RLC A	
+	MOV R5,A 	
+	DJNZ B,rshift 	;Now count backwards and repeat until "B" is zero
+	MOV R3,05h 	;Move result to R3/R2
+	MOV R2,04h 	;Move result to R3/R2
+	RET	
+	
+	
 SERIALINT:
 	JB TI, TRANS; if the interrupt is caused by T1 control is transferred to trans as the old data has been transferred and new data can be sent to the SBUF
 	CLR AutoLED
@@ -327,13 +430,7 @@ SERIALINT:
 TRANS:	RETI;  transfers control to main
 
 
-DELAY:
-    	MOV R0, #10 ;DELAY. HIGHER VALUE FOR FASTER CPUS
-Y:	MOV R1, #255
-	DJNZ R1, $
-	DJNZ R0, Y
 
-	RET
 
 END
 
