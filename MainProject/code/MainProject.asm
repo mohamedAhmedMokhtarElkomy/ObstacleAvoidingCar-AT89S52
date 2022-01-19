@@ -8,16 +8,16 @@ LJMP SERIALINT
 ;R3 for storing value of TH from ultrasonic echo
 ORG 30H
 START:
-;MOV P0, #0
+
 LeftForward EQU P0.3
 LeftBackward EQU P0.2
 RightForward EQU P0.1
 RightBackward EQU P0.0
-;CLR P1.4
 
 AutoLED EQU P2.5	;LED indicate if Auto mode is on or not
 OnLED EQU P2.7
-DetectedPin EQU P2.6
+DetectedPin EQU P2.6	;LED indicate if object detected or not
+
 CLR DetectedPin
 CLR OnLED
 
@@ -39,31 +39,30 @@ DATABUS EQU P1
 LCD_F BIT P1.7
 
 ;LCD INITIALIZATION
-		MOV A, #38H	; INITIATE LCD
-		ACALL COMMANDWRT
+MOV A, #38H	; INITIATE LCD
+ACALL COMMANDWRT
 
-		MOV A, #0FH	; DISPLAY ON CURSOR ON
-		ACALL COMMANDWRT
+MOV A, #0FH	; DISPLAY ON CURSOR ON
+ACALL COMMANDWRT
 		
-		MOV A, #01H	; CLEAR LCD
-		ACALL COMMANDWRT
-
-
+MOV A, #01H	; CLEAR LCD
+ACALL COMMANDWRT
 
 ;Setup serial port and timer 1 for bluetooth
 MOV TMOD, #00100001B	;Mode 2 for timer 1 (8 bit auto reload)
 MOV TH1, #0FDH		;setting baud rate 9600
 MOV SCON, #01010000B	;Serial Mode 1, REN Enabled
 SETB TR1		;Run timer 1
-;MOV IE, #10000000B	;enables interrupt
 
-SETB OnLED
+SETB OnLED		;Turn on LED that indicates that power is ON
+
 NormalMode:
-	;The following to instruction to reset when returning from AutoDriveMode 
+	;The following instructions to reset when returning from AutoDriveMode 
 	CLR AutoLED
 	ACALL StopCar
-	MOV IE, #10000000B	;enables interrupt
+	MOV IE, #10000000B	;enables interrupt and Stop serial interrupt from auto mode
 	
+;TODO Make Normal mode work on serial interrupts for let ultrasonic works	
 Main:	JNB RI, $	;Waiting for receive interrupt flag
 	MOV A, SBUF	;Move received character to A
 	CLR RI		;Clear receive interrupt flag
@@ -112,11 +111,12 @@ JMP BckMain
 Jstop:ACALL StopCar
 JMP BckMain	
 	
+;TODO turning ultrasonic on in normal mode
 BckMain:;SETB TRIG		; starts the trigger pulse
-	;ACALL Delay10M     	; Delay 10uS width for the trigger pulse
-	;CLR TRIG         	; ends the trigger pulse
+;	ACALL Delay10M     	; Delay 10uS width for the trigger pulse
+;	CLR TRIG         	; ends the trigger pulse
 	
-	;JNB ECHO,$    		; loops here until echo is received
+;	JNB ECHO,$    		; loops here until echo is received
 
 	;ACALL CalcDistance
 	SJMP Main	;Jump back to Main for looping
@@ -133,7 +133,7 @@ TrigAgain:
 	JNB AutoLED, NormalMode	;IF autoLed pin is 0 JMP to NormalMode
 
 	;TODO remove or solve it
-	CLR DetectedPin	
+;	CLR DetectedPin	
 	
 	SETB TRIG		; starts the trigger pulse
 	ACALL Delay10M     	; Delay 10uS width for the trigger pulse
@@ -141,14 +141,14 @@ TrigAgain:
 	
 	JNB ECHO,$    		; loops here until echo is received
 
-	ACALL CalcDistance
+	ACALL ECHOroutine
 	;TODO when transistor be used
 	;JB TF0, NoObj	
 	;ACALL Detected
 	
 ;	SJMP TrigAgain
 	
-	ACALL MoveForward
+	ACALL MoveForward	;Default for automode to move forward
 	SJMP TrigAgain		;short jumps to again loop	
 		
 MoveForward:
@@ -193,6 +193,7 @@ StopCar:
 	
 ;If object detected MoveBack for 1 sec then move right for 2 sec	
 Detected:
+;	JNB AutoLED, Normal	;If in normal form just give warning
 	SETB DetectedPin
 	ACALL MoveBackward
 	ACALL DelaySec
@@ -202,12 +203,20 @@ Detected:
 	CLR DetectedPin 
 	RET
 	
-;Display LOOP for send char to serial port for printing it on virtual terminal
-DLOOP:	MOV A, #01H	; CLEAR LCD
+;R6 is the input for sub routine
+;R7 is used as counter
+;R5 as temp register for data poped from stack
+;Display LOOP for printing input on LCD Screen
+DLOOP:	PUSH 06H
+	PUSH 07H
+	
+	; CLEAR LCD
+	MOV A, #01H
 	ACALL COMMANDWRT
 
 	MOV A, R6
 	MOV R7, #0D	;Counter to store count of numbers
+	
 ;PrintDEC, print => for converting hex value to decimal then print each number	
 	PrintDEC:
 		INC R7
@@ -220,80 +229,95 @@ DLOOP:	MOV A, #01H	; CLEAR LCD
 		MOV A, R5
 		ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
 		MOV R1, A;TODO REMOVE
-		;PRINTING A CHARACTER
-		CALL SENDCHAR
-
+		CALL SENDCHAR		;PRINTING A CHARACTER
 		;ACALL DelaySec		;TODO i think it is not useful
 		DJNZ R7, print		;decrements the byte indicated by the first operand and, if the resulting value is not zero, branches to the address specified in the second operand.
 
-
-	
+	POP 07H
+	POP 06H	
 RET	
 		
-CalcDistance:
+ECHOroutine:
 	;Loop until ECHO pin is low
 	;Start counting ticks from 44103D => AC47
-	;44103D for maximum distance
+	;44103D for maximum distance from 44103D to 65536 equal 4 meters
+	;
 	MOV TL0, #47H
 	MOV TH0, #0ACH
 
 	CLR TF0
+	
 	SETB TR0	;start timer 0
 	
 	;TODO LOOP while ECHO 1 and TF0 is 0	
-	JB ECHO, $	;If ECHO is high loop to echo is 1 
+	JB ECHO, $	;While ECHO is while stay here
 	CLR TR0
 	CLR TF0
 	
-	MOV A, #0C1H
+	;Calculate and print distance
+	ACALL CalcDistance
+	
+	;Check if distance is less that 1 meter or not
+	;C135H => over 98cm, C235H => over 101cm
+	MOV A, #0C2H	;
 	CLR C
 	SUBB A, TH0
-	ANL A, #10000000B
-	JNZ NoObj
+	ANL A, #10000000B	;Check first bit if 1 (-ve) Distance greater than 1 meter if 0 (+ve) Distance less than 1 meter
+	JNZ NoObj		;If 0 then no object in distance less than 1 meter
+	
+	;TODO not useful
 	;MOV A, #35H
 	;CLR C
 	;SUBB A, TL0
 	;ANL A, #10000000B
-	;JNZ NoObj
+	;JNZ NoObj	
+
+	;If else first bit is 1 then object detected in distance less than 1 meter
 	ACALL Detected
-	
-	;C135 for i meter
 		
 	
-	;TODO
+	;TODO if transistor is needed
 	;CheckECHO:JB ECHO, CheckOF
 	;	JMP d
 	;CheckOF: JNB TF0, CheckECHO
 			;IF else
 		;ACALL RestartUS
-NoObj:
-	
+		
+NoObj:RET
+
+;CalcDistance calculate distance in cm from number of tick by divide ticks / 58D
+;Then print the distance
+;R3, R2 = R1 R0 / R3 R2
+CalcDistance:
+	;Prepare R1 for div_16
 	CLR C
 	MOV A, TH0
-	SUBB A, #0ACH
-	MOV R1, A;for division
-	
+	SUBB A, #0ACH	;Subtract ACH from TH0 which was the starting ticks
+	MOV R1, A	;R1 used for div_16
+
+	;Prepare R0 for div_16
 	CLR C
 	MOV A, TL0
 	SUBB A, #47H
 	MOV R0, A
 	
+	;Prepare R3 & R2 for div_16
 	MOV R3, #0
 	MOV R2, #58D
 	
-	ACALL DIV_16
-	MOV A, R2
-	MOV R6, A
+	ACALL DIV_16	;R3, R2 = R1 R0 / R3 R2
+	MOV A, R2	;Store returned value in
+	MOV R6, A	;Move a to R6 that is used in Printing
+	
+	;Print distance in decimal
 	ACALL DLOOP
-
 RET
 
-;TODO
+;TODO if transistor is required
 ;restart ultrasonic sensor
-RestartUS:
-CLR TR0
-RET
-
+;RestartUS:
+;CLR TR0
+;RET
 
 ;Delay 10 micro sec
 Delay10M:
@@ -357,14 +381,23 @@ DATAWRT:
 	CLR EN
 
 	RET
-	
+
+DELAY10Mreg:
+	MOV R6,#2D	;10uS delay
+	DJNZ R6, $
+        RET  	
 DELAY:
-    	MOV R0, #10 ;DELAY. HIGHER VALUE FOR FASTER CPUS
+    	MOV R0, #10	;DELAY. HIGHER VALUE FOR FASTER CPUS
 Y:	MOV R1, #255
 	DJNZ R1, $
 	DJNZ R0, Y
 
 	RET
+	
+DELAY1m:
+	MOV R7,#250D	;1mS delay
+	DJNZ R7, $
+        RET
 	
 ;16bit division
 ; R1 R0
