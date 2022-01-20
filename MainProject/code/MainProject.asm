@@ -60,59 +60,18 @@ NormalMode:
 	;The following instructions to reset when returning from AutoDriveMode 
 	CLR AutoLED
 	ACALL StopCar
-	MOV IE, #10000000B	;enables interrupt and Stop serial interrupt from auto mode
+	MOV IE, #10010000B	;enables interrupt and Stop serial interrupt from auto mode
 	
 ;TODO Make Normal mode work on serial interrupts for let ultrasonic works	
-Main:	JNB RI, $	;Waiting for receive interrupt flag
-	MOV A, SBUF	;Move received character to A
-	CLR RI		;Clear receive interrupt flag
-	MOV R4, A
+Main:	JB AutoLED, AutoDriveMode	;IF Auto LED turned on from the interrupt so jmp to auto drive mode
+	SETB TRIG		; starts the trigger pulse
+	ACALL Delay10M     	; Delay 10uS width for the trigger pulse
+	CLR TRIG         	; ends the trigger pulse
 	
-;;;;;;;;Switch;;;;;;;;
-	CLR C		;Clear carry flag befor using SUBB for comparing
-	SUBB A, #'f'	;Compare A to 'f'
-	JZ Jmvfwd	;If A = 'f' MoveForward
-	
-	MOV A, R4;	
-	CLR C		;Clear carry flag befor using SUBB for comparing
-	SUBB A, #'b'	;Compare A to 'b'
-	JZ Jmvbwd	;If A = 'b' MoveBackward
-	
-	MOV A, R4;	
-	CLR C		;Clear carry flag befor using SUBB for comparing
-	SUBB A, #'r'	;Compare A to 'r'
-	JZ Jmvright	;If A = 'r' MoveRight
-	
-	MOV A, R4;	
-	CLR C		;Clear carry flag befor using SUBB for comparing
-	SUBB A, #'l'	;Compare A to 'l'
-	JZ Jmvleft	;If A = 'l' MoveLeft
-	
-	MOV A, R4;	
-	CLR C		;Clear carry flag befor using SUBB for comparing
-	SUBB A, #'a'	;Compare A to 'a'
-	JZ AutoDriveMode;If A = 'a' then active auto drive
-		
-	MOV A, R4;	
-	CLR C		;Clear carry flag befor using SUBB for comparing
-	SUBB A, #'s'	;Compare A to 's'
-	JZ Jstop	;If A = 's' stop the car
+	JNB ECHO,$    		; loops here until echo is received
 
-
-;;;;;;TRY TO OPTIMIZE;;;;;;
-Jmvfwd:	ACALL MoveForward
-JMP BckMain
-Jmvbwd:ACALL MoveBackward
-JMP BckMain
-Jmvright:ACALL MoveRight
-JMP BckMain
-Jmvleft:ACALL MoveLeft
-JMP BckMain
-Jstop:ACALL StopCar
-JMP BckMain	
-	
-;TODO turning ultrasonic on in normal mode
-BckMain:;SETB TRIG		; starts the trigger pulse
+	ACALL ECHOroutine
+;SETB TRIG		; starts the trigger pulse
 ;	ACALL Delay10M     	; Delay 10uS width for the trigger pulse
 ;	CLR TRIG         	; ends the trigger pulse
 	
@@ -131,9 +90,6 @@ AutoDriveMode:
 TrigAgain:
 	CLR C
 	JNB AutoLED, NormalMode	;IF autoLed pin is 0 JMP to NormalMode
-
-	;TODO remove or solve it
-;	CLR DetectedPin	
 	
 	SETB TRIG		; starts the trigger pulse
 	ACALL Delay10M     	; Delay 10uS width for the trigger pulse
@@ -193,14 +149,16 @@ StopCar:
 	
 ;If object detected MoveBack for 1 sec then move right for 2 sec	
 Detected:
-;	JNB AutoLED, Normal	;If in normal form just give warning
 	SETB DetectedPin
+	JNB AutoLED, NormalDET	;If in normal form just give warning
 	ACALL MoveBackward
 	ACALL DelaySec
 	ACALL MOVERight
 	ACALL DelaySec
 	ACALL DelaySec
 	CLR DetectedPin 
+	
+NormalDET:
 	RET
 	
 ;R6 is the input for sub routine
@@ -210,7 +168,7 @@ Detected:
 DLOOP:	PUSH 06H
 	PUSH 07H
 	
-	; CLEAR LCD
+	;CLEAR LCD
 	MOV A, #01H
 	ACALL COMMANDWRT
 
@@ -230,8 +188,9 @@ DLOOP:	PUSH 06H
 		ADD A, #'0'		;Add 0 hex value to print number from 0 to 9
 		MOV R1, A;TODO REMOVE
 		CALL SENDCHAR		;PRINTING A CHARACTER
-		;ACALL DelaySec		;TODO i think it is not useful
 		DJNZ R7, print		;decrements the byte indicated by the first operand and, if the resulting value is not zero, branches to the address specified in the second operand.
+	
+	ACALL Delay1m		;TODO i think it is not useful
 
 	POP 07H
 	POP 06H	
@@ -263,6 +222,7 @@ ECHOroutine:
 	CLR C
 	SUBB A, TH0
 	ANL A, #10000000B	;Check first bit if 1 (-ve) Distance greater than 1 meter if 0 (+ve) Distance less than 1 meter
+	CLR DetectedPin
 	JNZ NoObj		;If 0 then no object in distance less than 1 meter
 	
 	;TODO not useful
@@ -283,7 +243,7 @@ ECHOroutine:
 			;IF else
 		;ACALL RestartUS
 		
-NoObj:RET
+NoObj:	RET
 
 ;CalcDistance calculate distance in cm from number of tick by divide ticks / 58D
 ;Then print the distance
@@ -456,6 +416,71 @@ result:
 	
 SERIALINT:
 	JB TI, TRANS; if the interrupt is caused by T1 control is transferred to trans as the old data has been transferred and new data can be sent to the SBUF
+	JB AutoLED, AutoModeON
+	
+	MOV A, SBUF
+	CLR RI		;Clear receive interrupt flag
+	MOV R4, A
+	
+;;;;;;;;Switch;;;;;;;;
+	CLR C		;Clear carry flag befor using SUBB for comparing
+	SUBB A, #'f'	;Compare A to 'f'
+	JZ Jmvfwd	;If A = 'f' MoveForward
+	
+	MOV A, R4;	
+	CLR C		;Clear carry flag befor using SUBB for comparing
+	SUBB A, #'b'	;Compare A to 'b'
+	JZ Jmvbwd	;If A = 'b' MoveBackward
+	
+	MOV A, R4;	
+	CLR C		;Clear carry flag befor using SUBB for comparing
+	SUBB A, #'r'	;Compare A to 'r'
+	JZ Jmvright	;If A = 'r' MoveRight
+	
+	MOV A, R4;	
+	CLR C		;Clear carry flag befor using SUBB for comparing
+	SUBB A, #'l'	;Compare A to 'l'
+	JZ Jmvleft	;If A = 'l' MoveLeft
+	
+	MOV A, R4;	
+	CLR C		;Clear carry flag befor using SUBB for comparing
+	SUBB A, #'a'	;Compare A to 'a'
+	JZ TurnOnAuto;If A = 'a' then active auto drive
+	
+		
+	MOV A, R4;	
+	CLR C		;Clear carry flag befor using SUBB for comparing
+	SUBB A, #'s'	;Compare A to 's'
+	JZ Jstop	;If A = 's' stop the car
+
+
+	;;;;;;TRY TO OPTIMIZE;;;;;;
+	Jmvfwd:	ACALL MoveForward
+	JMP TRANS
+	Jmvbwd:ACALL MoveBackward
+	JMP TRANS
+	Jmvright:ACALL MoveRight
+	JMP TRANS
+	Jmvleft:ACALL MoveLeft
+	JMP TRANS
+	Jstop:ACALL StopCar
+	JMP TRANS
+	TurnOnAuto:SETB AutoLED
+	JMP TRANS
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+		
+AutoModeON:
 	CLR AutoLED
         CLR RI; clears RI flag
         RETI; transfers control to main
