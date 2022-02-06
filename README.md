@@ -9,7 +9,7 @@ AT89S52 is one of the popular microcontrollers from the Atmel family. AT89S52 mi
 
 # Schematic
 
-![Schematic](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/Schematic.png)
+![Schematic](https://github.com/mohamedAhmedMokhtarElkomy/ObstacleAvoidingCar-AT89S52/blob/main/Schematic.png)
 ## How does ultrasonic sensor work
 
 The trigger signal for starting the transmission is given to trigger pin. The trigger signal must be a pulse with 10uS high time. When the module receives a valid trigger signal it issues 8 pulses of 40KHz ultrasonic sound from the transmitter. Then ECHO pin goes high and send sound signal, when signal comes back ECHO pin goes low.
