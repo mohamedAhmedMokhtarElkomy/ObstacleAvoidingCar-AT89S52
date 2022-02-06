@@ -71,14 +71,14 @@ after echo pin goes to 1 start timer until echo pin goes to 0. then divide numbe
 
 ## Datasheets
 
-![datasheet](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/datasheet.jpg)
-![IE](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/IE.png)
-![Interrupt_Vector_Address](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/Interrupt_Vector_Address.gif)
-![PI](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/PI.png)
-![SCON](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/SCON.gif)
-![TCON register](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/TCON-Register.jpg)
-![TCON](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/TCON.PNG)
-![TMOD register](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/TMOD-register.jpg)
+![datasheet](https://github.com/mohamedAhmedMokhtarElkomy/ObstacleAvoidingCar-AT89S52/blob/main/datasheets/datasheet.jpg)
+![IE](https://github.com/mohamedAhmedMokhtarElkomy/ObstacleAvoidingCar-AT89S52/blob/main/datasheets/IE.png)
+![Interrupt_Vector_Address](https://github.com/mohamedAhmedMokhtarElkomy/ObstacleAvoidingCar-AT89S52/blob/main/datasheets/Interrupt_Vector_Address.gif)
+![PI](https://github.com/mohamedAhmedMokhtarElkomy/ObstacleAvoidingCar-AT89S52/blob/main/datasheets/PI.png)
+![SCON](https://github.com/mohamedAhmedMokhtarElkomy/ObstacleAvoidingCar-AT89S52/blob/main/datasheets/SCON.gif)
+![TCON register](https://github.com/mohamedAhmedMokhtarElkomy/ObstacleAvoidingCar-AT89S52/blob/main/datasheets/TCON-Register.jpg)
+![TCON](https://github.com/mohamedAhmedMokhtarElkomy/ObstacleAvoidingCar-AT89S52/blob/main/datasheets/TCON.PNG)
+![TMOD register](https://github.com/mohamedAhmedMokhtarElkomy/ObstacleAvoidingCar-AT89S52/blob/main/datasheets/TMOD-register.jpg)
 
 
 
