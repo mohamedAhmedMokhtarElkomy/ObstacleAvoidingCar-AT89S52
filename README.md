@@ -6,6 +6,10 @@ Robot car controlled using bluetooth module and has 2 modes. First mode is Norma
 # AT89S52 Microcontroller
 
 AT89S52 is one of the popular microcontrollers from the Atmel family. AT89S52 microcontroller is an 8-bit CMOS microcontroller having 8k Flash memory and 256 bytes of RAM memory. It can be operated at 33MHz maximum operating frequency by using an external oscillator.It has GPIO pins, three 16-bit timers, one full-duplex UART communication port, three 16-bit general-purpose timers, on-chip oscillator.
+
+# Schematic
+
+![Schematic](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/Schematic.png)
 ## How does ultrasonic sensor work
 
 The trigger signal for starting the transmission is given to trigger pin. The trigger signal must be a pulse with 10uS high time. When the module receives a valid trigger signal it issues 8 pulses of 40KHz ultrasonic sound from the transmitter. Then ECHO pin goes high and send sound signal, when signal comes back ECHO pin goes low.
@@ -68,4 +72,13 @@ after echo pin goes to 1 start timer until echo pin goes to 0. then divide numbe
 ## Datasheets
 
 ![datasheet](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/datasheet.jpg)
+![IE](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/IE.png)
+![Interrupt_Vector_Address](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/Interrupt_Vector_Address.gif)
+![PI](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/PI.png)
+![SCON](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/SCON.gif)
+![TCON register](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/TCON-Register.jpg)
+![TCON](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/TCON.PNG)
+![TMOD register](https://github.com/mohamedAhmedMokhtarElkomy/microprocessor/blob/main/datasheets/TMOD-register.jpg)
+
+
 
