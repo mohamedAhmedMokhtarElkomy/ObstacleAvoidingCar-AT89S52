@@ -20,6 +20,7 @@ DetectedPin EQU P2.6	;LED indicate if object detected or not
 
 CLR DetectedPin
 CLR OnLED
+CLR AutoLED
 
 TRIG EQU P2.3
 ECHO EQU P2.4
@@ -71,6 +72,7 @@ Main:	JB AutoLED, AutoDriveMode	;IF Auto LED turned on from the interrupt so jmp
 	JNB ECHO,$    		; loops here until echo is received
 
 	ACALL ECHOroutine
+	ACALL DelayHalfSec		;TODO i think it is not useful
 ;SETB TRIG		; starts the trigger pulse
 ;	ACALL Delay10M     	; Delay 10uS width for the trigger pulse
 ;	CLR TRIG         	; ends the trigger pulse
@@ -182,6 +184,11 @@ DLOOP:	PUSH 06H
 		DIV AB			;the quotient is stored in the accumulator and the remainder is stored in the B register
 		PUSH B
 		CJNE A, #0D, PrintDEC	;Compare the first two operands and branches to the specified destination if their values are not equal
+	MOV B, #10D
+	MOV R3, A
+	DIV AB
+	PUSH 03
+	INC R7
 	
 	print:	POP 05H			;POP to 05H which is R5
 		MOV A, R5
@@ -190,8 +197,7 @@ DLOOP:	PUSH 06H
 		CALL SENDCHAR		;PRINTING A CHARACTER
 		DJNZ R7, print		;decrements the byte indicated by the first operand and, if the resulting value is not zero, branches to the address specified in the second operand.
 	
-	ACALL Delay1m		;TODO i think it is not useful
-
+	
 	POP 07H
 	POP 06H	
 RET	
@@ -218,7 +224,8 @@ ECHOroutine:
 	
 	;Check if distance is less that 1 meter or not
 	;C135H => over 98cm, C235H => over 101cm
-	MOV A, #0C2H	;
+;	MOV A, #0C2H	;
+	MOV A, #0B1H	
 	CLR C
 	SUBB A, TH0
 	ANL A, #10000000B	;Check first bit if 1 (-ve) Distance greater than 1 meter if 0 (+ve) Distance less than 1 meter
@@ -292,6 +299,24 @@ Delay10M:
 	CLR TF0
 RET 
 
+DelayHalfSec:
+PUSH 07H
+    	MOV R7, #10D
+    	;Timer Clk = 11.0592/12*1 = 0.9216 MHz
+	;50000 uS / (1 / 0.9216)uS = 46080 [65536 - 46080 = 19456 => 4C00H]
+	DelayhlfSecLoop:
+    		MOV TL0, #00H
+    		MOV TH0, #4CH
+    		SETB TR0	;Start timer 0
+    	
+    		JNB TF0, $	;Loop until Timer 0 overflow = 1
+    		CLR TR0		;Stop timer 0
+    		CLR TF0		;Clear overFlow
+    	
+    		DJNZ R7, DelayhlfSecLoop ;Decrement A then if A != 0 jump to DelaySecLoop
+    	
+    	POP 07H
+RET
 DelaySec:
 	PUSH 07H
     	MOV R7, #20D
