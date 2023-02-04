@@ -3,6 +3,8 @@
 
 Robot car controlled using bluetooth module and has 2 modes. First mode is Normal mode, this mode receives a character from bluetooth (f=>forward, b=>backward, r=>right, l=>left, s=> stop, a=> automode) . Also it gives a red light when an object is detected in less than 25 cm. The second mode is automode which always move forward until  object is detected in less than 25 cm it move backward for 1 sec to stop the car at high speed then turn right, then it continue moving forward if no objected in front of it. By sending any character while on automode it return back to the normal mode.
 
+https://user-images.githubusercontent.com/84991746/216734920-4447e7ae-1b81-421d-98e8-494684a3333b.mp4
+
 # AT89S52 Microcontroller
 
 AT89S52 is one of the popular microcontrollers from the Atmel family. AT89S52 microcontroller is an 8-bit CMOS microcontroller having 8k Flash memory and 256 bytes of RAM memory. It can be operated at 33MHz maximum operating frequency by using an external oscillator.It has GPIO pins, three 16-bit timers, one full-duplex UART communication port, three 16-bit general-purpose timers, on-chip oscillator.
